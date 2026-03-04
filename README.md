@@ -1,5 +1,3 @@
-# engenharia-software
-
 # 🎟️ Sistema de Bilheteria Virtual 
 
 Este projeto consiste em uma plataforma robusta para a comercialização e gestão de ingressos online. O foco principal é garantir uma experiência de compra fluida para o cliente e um controle gerencial estratégico para o organizador, mitigando riscos críticos como a concorrência de assentos.

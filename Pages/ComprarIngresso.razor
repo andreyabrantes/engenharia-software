@@ -1,0 +1,207 @@
+@page "/comprar"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@using Microsoft.AspNetCore.Components
+@inject EventoService EventoService
+@inject NavigationManager Navigation
+
+<PageTitle>Comprar Ingresso - Bilheteria Virtual</PageTitle>
+
+<div class="container">
+    @if (!compraConcluida)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">🎫 Comprar Ingresso</h1>
+                <p class="card-subtitle">Selecione o evento, setor e assentos desejados</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Selecione o Evento</label>
+                <select class="form-control" @onchange="SelecionarEvento">
+                    <option value="">Escolha um evento...</option>
+                    @foreach (var evento in eventos)
+                    {
+                        <option value="@evento.Id" selected="@(evento.Id == eventoIdInicial)">
+                            @evento.Nome - @evento.Data.ToString("dd/MM/yyyy")
+                        </option>
+                    }
+                </select>
+            </div>
+
+            @if (eventoSelecionado != null)
+            {
+                <div class="form-group">
+                    <label class="form-label">Selecione o Setor</label>
+                    <div class="grid grid-2">
+                        @foreach (var setor in eventoSelecionado.Setores)
+                        {
+                            <div class="setor-card @(setorSelecionado?.Id == setor.Id ? "selected" : "")" 
+                                 @onclick="() => SelecionarSetor(setor)">
+                                <h3 class="event-title">@setor.Nome</h3>
+                                <div class="event-price">@setor.Preco.ToString("C2")</div>
+                                <div class="event-info">
+                                    Disponíveis: @setor.QuantidadeDisponivel/@setor.QuantidadeTotal
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (setorSelecionado != null && assentos.Any())
+            {
+                <div class="form-group">
+                    <label class="form-label">Selecione os Assentos (máximo 4)</label>
+                    <div class="seat-selector">
+                        @foreach (var assento in assentos)
+                        {
+                            <div class="seat @(assento.Ocupado ? "occupied" : "") @(assento.Selecionado ? "selected" : "")"
+                                 @onclick="() => SelecionarAssento(assento)">
+                                @assento.Numero
+                            </div>
+                        }
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 2rem;">
+                        <span>🟦 Disponível</span>
+                        <span>🟪 Selecionado</span>
+                        <span>⬜ Ocupado</span>
+                    </div>
+                </div>
+
+                @if (assentosSelecionados.Any())
+                {
+                    <div class="card" style="background: var(--light);">
+                        <h3>Resumo da Compra</h3>
+                        <p><strong>Evento:</strong> @eventoSelecionado.Nome</p>
+                        <p><strong>Setor:</strong> @setorSelecionado.Nome</p>
+                        <p><strong>Assentos:</strong> @string.Join(", ", assentosSelecionados.Select(a => a.Numero))</p>
+                        <p><strong>Quantidade:</strong> @assentosSelecionados.Count</p>
+                        <p style="font-size: 1.5rem; color: var(--primary);">
+                            <strong>Total: @((setorSelecionado.Preco * assentosSelecionados.Count).ToString("C2"))</strong>
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" @bind="nomeCliente" placeholder="Seu nome completo" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" class="form-control" @bind="emailCliente" placeholder="seu@email.com" />
+                    </div>
+
+                    <button class="btn btn-success" @onclick="FinalizarCompra" style="width: 100%; font-size: 1.2rem;">
+                        💳 Finalizar Compra
+                    </button>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="alert alert-success">
+                <h2>✅ Compra Realizada com Sucesso!</h2>
+                <p style="margin-top: 1rem;">Seu ingresso digital foi enviado para <strong>@emailCliente</strong></p>
+                <p>Código do ingresso: <strong>@codigoIngresso</strong></p>
+                <p style="margin-top: 1rem;">Guarde este código para apresentar na entrada do evento.</p>
+                <div style="margin-top: 2rem;">
+                    <p><strong>Evento:</strong> @eventoSelecionado?.Nome</p>
+                    <p><strong>Data:</strong> @eventoSelecionado?.Data.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Local:</strong> @eventoSelecionado?.Local</p>
+                    <p><strong>Setor:</strong> @setorSelecionado?.Nome</p>
+                    <p><strong>Assentos:</strong> @string.Join(", ", assentosSelecionados.Select(a => a.Numero))</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" @onclick="NovaCompra">Comprar Outro Ingresso</button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Evento> eventos = new();
+    private Evento? eventoSelecionado;
+    private Setor? setorSelecionado;
+    private List<Assento> assentos = new();
+    private List<Assento> assentosSelecionados = new();
+    private string nomeCliente = "";
+    private string emailCliente = "";
+    private bool compraConcluida = false;
+    private string codigoIngresso = "";
+    private int eventoIdInicial = 0;
+
+    protected override void OnInitialized()
+    {
+        eventos = EventoService.ObterEventos();
+        
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var eventoIdStr = query["eventoId"];
+        
+        if (!string.IsNullOrEmpty(eventoIdStr) && int.TryParse(eventoIdStr, out var eventoId))
+        {
+            eventoIdInicial = eventoId;
+            eventoSelecionado = eventos.FirstOrDefault(e => e.Id == eventoId);
+        }
+    }
+
+    private void SelecionarEvento(ChangeEventArgs e)
+    {
+        var eventoId = int.Parse(e.Value?.ToString() ?? "0");
+        eventoSelecionado = eventos.FirstOrDefault(ev => ev.Id == eventoId);
+        setorSelecionado = null;
+        assentos.Clear();
+        assentosSelecionados.Clear();
+    }
+
+    private void SelecionarSetor(Setor setor)
+    {
+        setorSelecionado = setor;
+        assentosSelecionados.Clear();
+        assentos = EventoService.GerarAssentos(50);
+    }
+
+    private void SelecionarAssento(Assento assento)
+    {
+        if (assento.Ocupado) return;
+
+        if (assento.Selecionado)
+        {
+            assento.Selecionado = false;
+            assentosSelecionados.Remove(assento);
+        }
+        else if (assentosSelecionados.Count < 4)
+        {
+            assento.Selecionado = true;
+            assentosSelecionados.Add(assento);
+        }
+    }
+
+    private void FinalizarCompra()
+    {
+        if (string.IsNullOrWhiteSpace(nomeCliente) || string.IsNullOrWhiteSpace(emailCliente))
+        {
+            return;
+        }
+
+        var compra = new Compra
+        {
+            NomeCliente = nomeCliente,
+            Email = emailCliente,
+            Evento = eventoSelecionado!,
+            Setor = setorSelecionado!,
+            AssentosSelecionados = assentosSelecionados,
+            ValorTotal = setorSelecionado!.Preco * assentosSelecionados.Count
+        };
+
+        codigoIngresso = EventoService.FinalizarCompra(compra);
+        compraConcluida = true;
+    }
+
+    private void NovaCompra()
+    {
+        Navigation.NavigateTo("/comprar", true);
+    }
+}

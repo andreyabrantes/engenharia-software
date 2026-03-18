@@ -1,0 +1,107 @@
+@inherits LayoutComponentBase
+@using BilheteriaVirtualBlazor.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<div id="app">
+    @if (AuthService.EstaAutenticado())
+    {
+        <nav class="navbar">
+            <div class="navbar-content">
+                <a href="/" class="logo">🎫 Bilheteria Virtual</a>
+                <ul class="nav-links">
+                    <li><NavLink href="/" Match="NavLinkMatch.All">Eventos</NavLink></li>
+                    
+                    @if (AuthService.EhCliente() || AuthService.EhAdmin())
+                    {
+                        <li><NavLink href="/comprar">Comprar Ingresso</NavLink></li>
+                    }
+                    
+                    @if (AuthService.EhAdmin())
+                    {
+                        <li><NavLink href="/cadastrar">Cadastrar Evento</NavLink></li>
+                        <li><NavLink href="/relatorios">Relatórios</NavLink></li>
+                    }
+                    
+                    <li>
+                        <div class="user-info">
+                            <span class="user-icon">@(AuthService.EhAdmin() ? "👨💼" : "👤")</span>
+                            <span class="user-name">@AuthService.ObterUsuarioLogado()?.Nome</span>
+                            <button class="btn-logout" @onclick="Logout">🚪 Sair</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="page">
+            @Body
+        </main>
+    }
+    else
+    {
+        <main class="page">
+            @Body
+        </main>
+    }
+</div>
+
+<style>
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--light);
+        border-radius: 8px;
+    }
+
+    .user-icon {
+        font-size: 1.5rem;
+    }
+
+    .user-name {
+        font-weight: 500;
+        color: var(--dark);
+    }
+
+    .btn-logout {
+        background: var(--danger);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s;
+        margin-left: 0.5rem;
+    }
+
+    .btn-logout:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthStateChanged += StateHasChanged;
+        
+        if (!AuthService.EstaAutenticado() && !Navigation.Uri.Contains("/login"))
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= StateHasChanged;
+    }
+}

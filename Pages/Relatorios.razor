@@ -1,0 +1,169 @@
+@page "/relatorios"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Relatórios de Vendas - Bilheteria Virtual</PageTitle>
+
+@if (!AuthService.EhAdmin())
+{
+    <div class="container">
+        <div class="card">
+            <div class="alert alert-danger">
+                <h2>⛔ Acesso Negado</h2>
+                <p>Apenas administradores podem visualizar relatórios.</p>
+            </div>
+        </div>
+    </div>
+    return;
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="card-title">📊 Relatórios de Vendas em Tempo Real</h1>
+            <p class="card-subtitle">Acompanhe o desempenho dos seus eventos e tome decisões estratégicas</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">@relatorio.TotalIngressosVendidos</div>
+                <div class="stat-label">Ingressos Vendidos</div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-value">@relatorio.ReceitaTotal.ToString("C2")</div>
+                <div class="stat-label">Receita Total</div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-value">@relatorio.EventosAtivos</div>
+                <div class="stat-label">Eventos Ativos</div>
+            </div>
+
+            <div class="stat-card secondary">
+                <div class="stat-value">@relatorio.TicketMedio.ToString("C2")</div>
+                <div class="stat-label">Ticket Médio</div>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 2rem; margin-bottom: 1rem;">Vendas por Evento</h2>
+
+        @if (relatorio.VendasPorEvento.Any())
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Ingressos Vendidos</th>
+                        <th>Capacidade Total</th>
+                        <th>Ocupação</th>
+                        <th>Receita</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venda in relatorio.VendasPorEvento)
+                    {
+                        <tr>
+                            <td><strong>@venda.NomeEvento</strong></td>
+                            <td>@venda.IngressosVendidos</td>
+                            <td>@venda.CapacidadeTotal</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: @venda.Ocupacao%"></div>
+                                    </div>
+                                    <span>@venda.Ocupacao.ToString("F1")%</span>
+                                </div>
+                            </td>
+                            <td><strong>@venda.Receita.ToString("C2")</strong></td>
+                            <td>
+                                @if (venda.Ocupacao >= 80)
+                                {
+                                    <span class="badge badge-danger">Quase Esgotado</span>
+                                }
+                                else if (venda.Ocupacao >= 50)
+                                {
+                                    <span class="badge badge-warning">Vendendo Bem</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-success">Disponível</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                <p>Nenhuma venda registrada ainda. Comece vendendo ingressos!</p>
+            </div>
+        }
+    </div>
+
+    @if (relatorio.VendasPorEvento.Any())
+    {
+        <div class="card">
+            <h2 class="card-title">📈 Insights e Análises</h2>
+            
+            <div class="grid grid-2" style="margin-top: 1.5rem;">
+                <div class="card" style="background: var(--light);">
+                    <h3>🏆 Evento Mais Vendido</h3>
+                    <p style="font-size: 1.3rem; color: var(--primary); margin-top: 0.5rem;">
+                        <strong>@eventoMaisVendido?.NomeEvento</strong>
+                    </p>
+                    <p>@eventoMaisVendido?.IngressosVendidos ingressos vendidos</p>
+                    <p>Ocupação: @eventoMaisVendido?.Ocupacao.ToString("F1")%</p>
+                </div>
+
+                <div class="card" style="background: var(--light);">
+                    <h3>💰 Maior Receita</h3>
+                    <p style="font-size: 1.3rem; color: var(--success); margin-top: 0.5rem;">
+                        <strong>@eventoMaiorReceita?.NomeEvento</strong>
+                    </p>
+                    <p>@eventoMaiorReceita?.Receita.ToString("C2")</p>
+                    <p>@eventoMaiorReceita?.IngressosVendidos ingressos vendidos</p>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" @onclick="AtualizarRelatorio" style="margin-top: 1.5rem;">
+                🔄 Atualizar Dados em Tempo Real
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private RelatorioVendas relatorio = new();
+    private VendaPorEvento? eventoMaisVendido;
+    private VendaPorEvento? eventoMaiorReceita;
+
+    protected override void OnInitialized()
+    {
+        CarregarRelatorio();
+    }
+
+    private void CarregarRelatorio()
+    {
+        relatorio = EventoService.ObterRelatorio();
+        
+        if (relatorio.VendasPorEvento.Any())
+        {
+            eventoMaisVendido = relatorio.VendasPorEvento.OrderByDescending(v => v.IngressosVendidos).FirstOrDefault();
+            eventoMaiorReceita = relatorio.VendasPorEvento.OrderByDescending(v => v.Receita).FirstOrDefault();
+        }
+    }
+
+    private void AtualizarRelatorio()
+    {
+        EventoService.SimularVendas();
+        CarregarRelatorio();
+        StateHasChanged();
+    }
+}

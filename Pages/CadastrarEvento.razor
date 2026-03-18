@@ -1,0 +1,191 @@
+@page "/cadastrar"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Cadastrar Evento - Bilheteria Virtual</PageTitle>
+
+@if (!AuthService.EhAdmin())
+{
+    <div class="container">
+        <div class="card">
+            <div class="alert alert-danger">
+                <h2>⛔ Acesso Negado</h2>
+                <p>Apenas administradores podem cadastrar eventos.</p>
+            </div>
+        </div>
+    </div>
+    return;
+}
+
+<div class="container">
+    @if (!eventoCadastrado)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">📝 Cadastrar Novo Evento</h1>
+                <p class="card-subtitle">Preencha as informações do evento para começar a vender ingressos de forma estruturada e controlada</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nome do Evento</label>
+                <input type="text" class="form-control" @bind="novoEvento.Nome" placeholder="Ex: Show de Rock 2024" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descrição</label>
+                <textarea class="form-control" @bind="novoEvento.Descricao" rows="3" placeholder="Descreva o evento..."></textarea>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Data e Hora</label>
+                    <input type="datetime-local" class="form-control" @bind="novoEvento.Data" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Local</label>
+                    <input type="text" class="form-control" @bind="novoEvento.Local" placeholder="Ex: Arena Unifeso" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Emoji do Evento</label>
+                <input type="text" class="form-control" @bind="novoEvento.ImagemUrl" placeholder="Ex: 🎸 🎭 🎧" maxlength="2" />
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Setores e Preços</h3>
+
+            @foreach (var setor in novoEvento.Setores)
+            {
+                <div class="card" style="background: var(--light); margin-bottom: 1rem;">
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label class="form-label">Nome do Setor</label>
+                            <input type="text" class="form-control" @bind="setor.Nome" placeholder="Ex: Pista" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Preço (R$)</label>
+                            <input type="number" step="0.01" class="form-control" @bind="setor.Preco" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Quantidade de Ingressos</label>
+                            <input type="number" class="form-control" @bind="setor.QuantidadeTotal" />
+                        </div>
+                    </div>
+                    @if (novoEvento.Setores.Count > 1)
+                    {
+                        <button class="btn btn-outline" @onclick="() => RemoverSetor(setor)">Remover Setor</button>
+                    }
+                </div>
+            }
+
+            <button class="btn btn-outline" @onclick="AdicionarSetor" style="margin-bottom: 2rem;">
+                ➕ Adicionar Setor
+            </button>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-success" @onclick="SalvarEvento" style="flex: 1;">
+                    ✅ Cadastrar Evento
+                </button>
+                <button class="btn btn-outline" @onclick="LimparFormulario">
+                    🔄 Limpar
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="alert alert-success">
+                <h2>✅ Evento Cadastrado com Sucesso!</h2>
+                <p style="margin-top: 1rem;"><strong>@novoEvento.Nome</strong> foi cadastrado e está pronto para vender ingressos!</p>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Resumo do Evento:</h3>
+                    <p><strong>Data:</strong> @novoEvento.Data.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Local:</strong> @novoEvento.Local</p>
+                    <p><strong>Descrição:</strong> @novoEvento.Descricao</p>
+                    <p><strong>Setores cadastrados:</strong> @novoEvento.Setores.Count</p>
+                    <p><strong>Capacidade total:</strong> @novoEvento.Setores.Sum(s => s.QuantidadeTotal) ingressos</p>
+                    <p><strong>Receita potencial:</strong> @novoEvento.Setores.Sum(s => s.Preco * s.QuantidadeTotal).ToString("C2")</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" @onclick="CadastrarNovoEvento">Cadastrar Outro Evento</button>
+        </div>
+    }
+</div>
+
+@code {
+    private Evento novoEvento = new();
+    private bool eventoCadastrado = false;
+
+    protected override void OnInitialized()
+    {
+        InicializarNovoEvento();
+    }
+
+    private void InicializarNovoEvento()
+    {
+        novoEvento = new Evento
+        {
+            Data = DateTime.Now.AddDays(30),
+            ImagemUrl = "🎉",
+            Setores = new List<Setor>
+            {
+                new Setor { Nome = "Pista", Preco = 50.00m, QuantidadeTotal = 100 }
+            }
+        };
+    }
+
+    private void AdicionarSetor()
+    {
+        novoEvento.Setores.Add(new Setor
+        {
+            Nome = "",
+            Preco = 0,
+            QuantidadeTotal = 0
+        });
+    }
+
+    private void RemoverSetor(Setor setor)
+    {
+        if (novoEvento.Setores.Count > 1)
+        {
+            novoEvento.Setores.Remove(setor);
+        }
+    }
+
+    private void SalvarEvento()
+    {
+        if (string.IsNullOrWhiteSpace(novoEvento.Nome) || 
+            string.IsNullOrWhiteSpace(novoEvento.Local) ||
+            !novoEvento.Setores.Any())
+        {
+            return;
+        }
+
+        foreach (var setor in novoEvento.Setores)
+        {
+            setor.QuantidadeDisponivel = setor.QuantidadeTotal;
+        }
+
+        EventoService.AdicionarEvento(novoEvento);
+        eventoCadastrado = true;
+    }
+
+    private void LimparFormulario()
+    {
+        InicializarNovoEvento();
+    }
+
+    private void CadastrarNovoEvento()
+    {
+        eventoCadastrado = false;
+        InicializarNovoEvento();
+    }
+}

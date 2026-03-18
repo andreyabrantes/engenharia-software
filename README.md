@@ -1,58 +1,197 @@
-# 🎟️ Sistema de Bilheteria Virtual 
+# 🎫 Bilheteria Virtual - Blazor WebAssembly
 
-Este projeto consiste em uma plataforma robusta para a comercialização e gestão de ingressos online. O foco principal é garantir uma experiência de compra fluida para o cliente e um controle gerencial estratégico para o organizador, mitigando riscos críticos como a concorrência de assentos.
+Sistema completo de bilheteria virtual desenvolvido com **Blazor WebAssembly**, C#, HTML e CSS.
 
-****👥 Histórias de Usuário (Backlog)****
-ID	| Papel |	Descrição | Critério de Aceite
+## 🔐 Sistema de Autenticação
 
-01 - Cliente | Eu quero comprar ingressos online escolhendo setor e assento para garantir minha comodidade e segurança.	Mapa interativo de assentos com status de ocupação em tempo real.
+O sistema possui dois tipos de usuários com permissões diferentes:
 
-02 - Cliente | Eu quero receber meu ingresso digital por e-mail para acessar o evento de forma rápida e sustentável.
+### 👨💼 Administrador
+- **E-mail:** admin@bilheteria.com
+- **Senha:** admin123
+- **Permissões:**
+  - Visualizar todos os eventos
+  - Cadastrar novos eventos
+  - Excluir eventos
+  - Visualizar relatórios de vendas
+  - Comprar ingressos
 
-03 - Organizador |	Eu quero cadastrar eventos com datas, setores e preços para vender ingressos de forma estruturada,interface administrativa para CRUD de eventos e precificação por lote.
+### 👤 Cliente
+- **E-mail:** cliente@email.com
+- **Senha:** cliente123
+- **Permissões:**
+  - Visualizar eventos disponíveis
+  - Comprar ingressos
+  - Selecionar setores e assentos
 
-04 - Organizador | Eu quero acompanhar relatórios de vendas em tempo real para monitorar o desempenho e tomar decisões.
+## 📋 User Stories Implementadas
 
-📊 Matriz de Seleção de Ciclo de Vida
-Abaixo, detalhamos a estratégia de engenharia de software adotada para este ecossistema.
+### ✅ História 1 - Compra de Ingressos
+**Como cliente**, eu quero comprar ingressos online escolhendo setor e assento para que eu garanta minha participação no evento com comodidade e segurança.
 
-🌐 Contexto do Sistema
-O sistema opera em um ambiente de alta transacionalidade. A principal dor de sistemas de bilheteria que identificamos é o pico de acesso durante a abertura de vendas e a necessidade de consistência imediata dos dados (evitar que duas pessoas comprem o mesmo lugar. Para isso, criamos alguns critérios determinantes que irão 
+**Implementação:** 
+- Página inicial com lista de eventos disponíveis
+- Página de compra com seleção interativa de eventos, setores e assentos
+- Validação de disponibilidade em tempo real
+- Interface responsiva e intuitiva
 
-🎯 Critérios Determinantes
+### ✅ História 2 - Ingresso Digital
+**Como cliente**, eu quero receber meu ingresso digital por e-mail após a compra para que eu possa acessar o evento de forma rápida e sem precisar imprimir nada.
 
-    Concorrência: O sistema deve lidar com múltiplos pedidos simultâneos, evitando fila de requisição e lentidões no sistema.
+**Implementação:** 
+- Confirmação de compra com código único de ingresso
+- Simulação de envio por e-mail
+- Exibição de todos os detalhes do ingresso
+- Código para apresentação na entrada
 
-    Segurança: Proteção de dados sensíveis de clientes e autenticidade do ID do ingresso.
+### ✅ História 3 - Cadastro de Eventos
+**Como organizador do evento**, eu quero cadastrar eventos com datas, setores, preços e quantidade de ingressos disponíveis para que eu possa vender ingressos de forma estruturada e controlada.
 
-    Usabilidade: O fluxo de compra deve ser concluído em poucos cliques para reduzir a taxa de abandono de carrinho.
+**Implementação:** 
+- Formulário completo de cadastro de eventos
+- Suporte para múltiplos setores por evento
+- Configuração de preços e quantidades
+- Validação de dados
+- Cálculo automático de capacidade e receita potencial
 
-⚠️ Maiores Riscos Identificados
+### ✅ História 4 - Relatórios de Vendas
+**Como organizador do evento**, eu quero acompanhar relatórios de vendas em tempo real para que eu possa monitorar o desempenho do evento e tomar decisões estratégicas.
 
-    Overbooking/Race Condition: Possibilidade de dois usuários reservarem o mesmo assento simultaneamente.
+**Implementação:** 
+- Dashboard com estatísticas em tempo real
+- Cards com métricas principais (ingressos vendidos, receita, ticket médio)
+- Tabela detalhada de vendas por evento
+- Indicadores de ocupação com barra de progresso
+- Insights automáticos (evento mais vendido, maior receita)
+- Atualização em tempo real
 
-    Falha na Integração de E-mail: O cliente pagar e não receber o ingresso, gerando suporte excessivo.
+## 🚀 Como Executar
 
-    Indisponibilidade: O servidor cair durante o lançamento de um evento popular.
+### Pré-requisitos
+- .NET 8.0 SDK (já instalado)
 
-    Fraude: Possibilidade de um usuário utilizar o ingresso de outro comprador.
+### Executar o Projeto
 
-🔄 Modelo de Ciclo utilizado
-Modelo Incremental e Iterativo (Scrum/Ágil).
+```bash
+cd BilheteriaVirtualBlazor
+export PATH="$HOME/.dotnet:$PATH"
+dotnet run
+```
 
-💡 Justificativa Técnica
-Diferente do modelo cascata, o ciclo iterativo permitirá que a compra e reserva seja testada e validada exaustivamente antes de avançarmos para as demais funcionalidades da interface gráfica.
+Ou com hot reload para desenvolvimento:
 
-    Feedback Antecipado: Como se trata de um projeto de graduação, as entregas incrementais irá nos permitir ajustes de rota conforme as críticas e sugestões do professor e do grupo.
+```bash
+dotnet watch
+```
 
-    Mitigação de Riscos: O risco de race condition pode ser atacado na primeira Sprint, garantindo que a base do sistema seja sólida.
-    
-****Componentes do Projeto****
+Acesse no navegador: **https://localhost:5001** ou **http://localhost:5000**
 
-* Andrey Campos
-* Gustavo Ramos
-* Nathan Salles
-* Cristiano Cordeiro
-* Lucas Gabriel
+## 📁 Estrutura do Projeto
 
-O projeto está sendo feito por alunos do 5°- Período de Ciência da Computação da Unifeso, para agregar à materia de Engenharia de Software do professor Andŕe Campos.
+```
+BilheteriaVirtualBlazor/
+├── Models/
+│   └── Models.cs              # Modelos de dados (Evento, Setor, Assento, Compra, Relatório)
+├── Services/
+│   └── EventoService.cs       # Serviço de gerenciamento de eventos e vendas
+├── Pages/
+│   ├── Home.razor             # Página inicial com eventos (User Story 1)
+│   ├── ComprarIngresso.razor  # Compra de ingressos (User Stories 1 e 2)
+│   ├── CadastrarEvento.razor  # Cadastro de eventos (User Story 3)
+│   └── Relatorios.razor       # Dashboard de relatórios (User Story 4)
+├── Layout/
+│   └── MainLayout.razor       # Layout principal com navegação
+├── wwwroot/
+│   └── css/
+│       └── app.css            # Estilos CSS customizados
+├── Program.cs                 # Configuração da aplicação
+└── App.razor                  # Componente raiz
+
+```
+
+## 🎨 Características do Design
+
+- ✨ Design moderno e profissional com Blazor WebAssembly
+- 🎨 Gradientes vibrantes e animações suaves
+- 📱 Totalmente responsivo (mobile-first)
+- 🎯 Interface intuitiva e amigável
+- 🌈 Paleta de cores vibrante e consistente
+- ⚡ Transições e efeitos visuais aprimorados
+- 🔄 Atualizações em tempo real
+- 💫 Componentes interativos e reativos
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Blazor WebAssembly** - Framework SPA da Microsoft com C#
+- **C# 12** - Linguagem de programação
+- **.NET 8.0** - Plataforma de desenvolvimento
+- **HTML5** - Estrutura semântica
+- **CSS3** - Estilização moderna com gradientes, flexbox e grid
+- **Dependency Injection** - Injeção de dependências nativa
+- **Component-based Architecture** - Arquitetura baseada em componentes
+
+## 📱 Funcionalidades
+
+### Para Clientes:
+- ✅ Visualização de eventos disponíveis com detalhes
+- ✅ Seleção interativa de setores com preços
+- ✅ Seleção visual de assentos (até 4 por compra)
+- ✅ Resumo da compra em tempo real
+- ✅ Recebimento de código de ingresso digital
+- ✅ Interface responsiva para mobile e desktop
+
+### Para Organizadores:
+- ✅ Cadastro completo de eventos
+- ✅ Configuração de múltiplos setores e preços
+- ✅ Definição de capacidade por setor
+- ✅ Dashboard com estatísticas em tempo real
+- ✅ Relatórios detalhados de vendas por evento
+- ✅ Análise de ocupação e receita
+- ✅ Insights automáticos para tomada de decisão
+
+## 🎯 Diferenciais do Blazor WebAssembly
+
+- 🚀 **Performance**: Execução no lado do cliente com WebAssembly
+- 💻 **C# Full Stack**: Mesma linguagem no front e back-end
+- 🔄 **Reatividade**: Atualização automática da UI
+- 🧩 **Componentização**: Reutilização de componentes
+- 🔒 **Type Safety**: Tipagem forte em todo o código
+- 🛠️ **Tooling**: Suporte completo do Visual Studio e VS Code
+- 📦 **Sem JavaScript**: Desenvolvimento 100% em C#
+
+## 🔄 Próximos Passos (Melhorias Futuras)
+
+- [ ] Integração com API REST backend
+- [ ] Autenticação e autorização (Identity)
+- [ ] Banco de dados real (SQL Server/PostgreSQL)
+- [ ] Gateway de pagamento (Stripe/PagSeguro)
+- [ ] Envio real de e-mails (SendGrid)
+- [ ] QR Code para ingressos
+- [ ] Sistema de check-in
+- [ ] Notificações push
+- [ ] Exportação de relatórios (PDF/Excel)
+- [ ] Painel administrativo avançado
+
+## 👨‍💻 Desenvolvimento
+
+Projeto desenvolvido para a disciplina de **Engenharia de Software - 6° Período - Unifeso**
+
+### Comandos Úteis
+
+```bash
+# Compilar o projeto
+dotnet build
+
+# Executar testes
+dotnet test
+
+# Publicar para produção
+dotnet publish -c Release
+
+# Limpar build
+dotnet clean
+```
+
+---
+
+**Feito com ❤️ e Blazor WebAssembly**

@@ -1,0 +1,265 @@
+@page "/"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Eventos - Bilheteria Virtual</PageTitle>
+
+<div class="container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">🎉 Eventos Disponíveis</h1>
+            <p class="page-subtitle">Encontre e garanta seu ingresso com segurança</p>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <div class="search-input-wrap">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" class="form-control search-input" placeholder="Buscar por nome, local ou descrição..." @bind="termoBusca" @bind:event="oninput" />
+        </div>
+        <select class="form-control sort-select" @bind="ordenacao">
+            <option value="data">📅 Mais próximos</option>
+            <option value="preco">💰 Menor preço</option>
+            <option value="ocupacao">🔥 Mais procurados</option>
+        </select>
+    </div>
+
+    @if (!eventos.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">🎭</div>
+            <h3>Nenhum evento cadastrado</h3>
+            <p>Aguarde novos eventos em breve!</p>
+        </div>
+    }
+    else if (!eventosFiltrados.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <h3>Nenhum resultado encontrado</h3>
+            <p>Tente buscar por outro termo</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-3">
+            @foreach (var evento in eventosFiltrados)
+            {
+                var precoMinimo = evento.Setores.Any() ? evento.Setores.Min(s => s.Preco) : 0;
+                var totalDisponivel = evento.Setores.Sum(s => s.QuantidadeDisponivel);
+                var totalCapacidade = evento.Setores.Sum(s => s.QuantidadeTotal);
+                var ocupacaoPct = totalCapacidade > 0 ? (double)(totalCapacidade - totalDisponivel) / totalCapacidade * 100 : 0;
+
+                <div class="event-card">
+                    <div class="event-image">
+                        <span class="event-emoji">@evento.ImagemUrl</span>
+                        @if (evento.Esgotado)
+                        {
+                            <div class="esgotado-overlay">ESGOTADO</div>
+                        }
+                        else if (ocupacaoPct >= 80)
+                        {
+                            <span class="event-badge-hot">🔥 Quase esgotado</span>
+                        }
+                    </div>
+                    <div class="event-content">
+                        <h3 class="event-title">@evento.Nome</h3>
+                        <div class="event-meta">
+                            <span class="meta-item">📅 @evento.Data.ToString("dd/MM/yyyy")</span>
+                            <span class="meta-item">📍 @evento.Local</span>
+                        </div>
+                        <p class="event-desc">@evento.Descricao</p>
+
+                        @if (!evento.Esgotado)
+                        {
+                            <div class="event-footer">
+                                <div class="price-block">
+                                    <span class="price-label">A partir de</span>
+                                    <span class="event-price">@precoMinimo.ToString("C2")</span>
+                                </div>
+                                <div class="vagas-block">
+                                    <div class="ocupacao-bar">
+                                        <div class="ocupacao-fill @(ocupacaoPct >= 80 ? "quase-esgotado" : "")"
+                                             style="width: @ocupacaoPct.ToString("F0")%"></div>
+                                    </div>
+                                    <span class="vagas-text">@totalDisponivel vagas</span>
+                                </div>
+                            </div>
+
+                            <div class="event-actions">
+                                <button class="btn btn-primary" @onclick="() => ComprarIngresso(evento.Id)" style="flex:1">
+                                    🎫 Comprar Ingresso
+                                </button>
+                                @if (AuthService.EhAdmin())
+                                {
+                                    <button class="btn-delete" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="event-actions">
+                                <button class="btn btn-outline" disabled style="flex:1; opacity:0.5; cursor:not-allowed">
+                                    🚫 Esgotado
+                                </button>
+                                @if (AuthService.EhAdmin())
+                                {
+                                    <button class="btn-delete" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: white;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.25rem;
+    }
+
+    .page-subtitle { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+
+    .search-bar {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.75rem;
+        flex-wrap: wrap;
+    }
+
+    .search-input-wrap {
+        flex: 1;
+        min-width: 240px;
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-light);
+        pointer-events: none;
+    }
+
+    .search-input { padding-left: 2.5rem; background: white; }
+    .sort-select { width: auto; min-width: 180px; background: white; }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: rgba(255,255,255,0.8);
+    }
+    .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; color: white; }
+    .empty-state p { font-size: 0.9rem; opacity: 0.7; }
+
+    .event-emoji { font-size: 3.5rem; z-index: 1; }
+
+    .event-badge-hot {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background: rgba(220,38,38,0.9);
+        color: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        backdrop-filter: blur(4px);
+    }
+
+    .event-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        margin-bottom: 0.625rem;
+    }
+
+    .meta-item { font-size: 0.8rem; color: var(--gray); font-weight: 500; }
+
+    .event-desc {
+        font-size: 0.82rem;
+        color: var(--gray);
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .event-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 1rem;
+    }
+
+    .price-block { display: flex; flex-direction: column; }
+    .price-label { font-size: 0.7rem; color: var(--gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .event-price { font-size: 1.4rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+
+    .vagas-block { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+    .vagas-text { font-size: 0.75rem; color: var(--gray); font-weight: 600; }
+
+    .event-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+</style>
+
+@code {
+    private List<Evento> eventos = new();
+    private string termoBusca = string.Empty;
+    private string ordenacao = "data";
+
+    private IEnumerable<Evento> eventosFiltrados => eventos
+        .Where(e => string.IsNullOrWhiteSpace(termoBusca) ||
+                    e.Nome.Contains(termoBusca, StringComparison.OrdinalIgnoreCase) ||
+                    e.Local.Contains(termoBusca, StringComparison.OrdinalIgnoreCase) ||
+                    e.Descricao.Contains(termoBusca, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(e => ordenacao switch
+        {
+            "data"    => e.Data.Ticks,
+            "preco"   => e.Setores.Any() ? (double)e.Setores.Min(s => s.Preco) : double.MaxValue,
+            "ocupacao" => -(e.Setores.Sum(s => s.QuantidadeTotal) > 0
+                ? (double)(e.Setores.Sum(s => s.QuantidadeTotal - s.QuantidadeDisponivel)) / e.Setores.Sum(s => s.QuantidadeTotal)
+                : 0),
+            _ => e.Data.Ticks
+        });
+
+    protected override void OnInitialized()
+    {
+        CarregarEventos();
+        EventoService.OnEstadoAlterado += AtualizarEventos;
+    }
+
+    private void AtualizarEventos()
+    {
+        CarregarEventos();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void CarregarEventos() => eventos = EventoService.ObterEventos();
+    private void ComprarIngresso(int id) => Navigation.NavigateTo($"/comprar?eventoId={id}");
+    private void ExcluirEvento(int id) => EventoService.ExcluirEvento(id);
+
+    public void Dispose() => EventoService.OnEstadoAlterado -= AtualizarEventos;
+}

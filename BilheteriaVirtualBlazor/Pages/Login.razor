@@ -1,0 +1,123 @@
+@page "/login"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Login - Bilheteria Virtual</PageTitle>
+
+<link href="css/login.css" rel="stylesheet" />
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="logo-large">🎫</div>
+            <h1 class="login-title">Bilheteria Virtual</h1>
+            <p class="login-subtitle">Faça login para continuar</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(mensagemErro))
+        {
+            <div class="alert alert-danger">
+                ⚠️ @mensagemErro
+            </div>
+        }
+
+        <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input type="email" class="form-control" @bind="email" placeholder="seu@email.com" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Senha</label>
+            <input type="password" class="form-control" @bind="senha" placeholder="Digite sua senha" @onkeypress="HandleKeyPress" />
+        </div>
+
+        <button class="btn btn-primary" @onclick="RealizarLogin" style="width: 100%; font-size: 1.1rem; margin-bottom: 1rem;">
+            🔐 Entrar
+        </button>
+
+        <div class="login-divider">
+            <span>Contas de teste</span>
+        </div>
+
+        <div class="test-accounts">
+            <div class="test-account-card" @onclick="LoginAdmin">
+                <div class="test-account-icon">👨💼</div>
+                <div class="test-account-info">
+                    <strong>Administrador</strong>
+                    <small>admin@bilheteria.com</small>
+                </div>
+            </div>
+
+            <div class="test-account-card" @onclick="LoginCliente">
+                <div class="test-account-icon">👤</div>
+                <div class="test-account-info">
+                    <strong>Cliente</strong>
+                    <small>cliente@email.com</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-info">
+            <p><strong>👨💼 Admin:</strong> admin@bilheteria.com / admin123</p>
+            <p><strong>👤 Cliente:</strong> cliente@email.com / cliente123</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = "";
+    private string senha = "";
+    private string mensagemErro = "";
+
+    protected override void OnInitialized()
+    {
+        if (AuthService.EstaAutenticado())
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private void RealizarLogin()
+    {
+        mensagemErro = "";
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha))
+        {
+            mensagemErro = "Por favor, preencha todos os campos!";
+            return;
+        }
+
+        if (AuthService.Login(email, senha))
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            mensagemErro = "E-mail ou senha incorretos!";
+        }
+    }
+
+    private void LoginAdmin()
+    {
+        email = "admin@bilheteria.com";
+        senha = "admin123";
+        RealizarLogin();
+    }
+
+    private void LoginCliente()
+    {
+        email = "cliente@email.com";
+        senha = "cliente123";
+        RealizarLogin();
+    }
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            RealizarLogin();
+        }
+    }
+}

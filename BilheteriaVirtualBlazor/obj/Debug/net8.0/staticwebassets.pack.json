@@ -1,0 +1,65 @@
+{
+  "Files": [
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/bin/Debug/net8.0/wwwroot/_framework/blazor.webassembly.js",
+      "PackagePath": "staticwebassets/_framework/blazor.webassembly.js"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/obj/Debug/net8.0/compressed/5qoghpwncv.gz",
+      "PackagePath": "staticwebassets/_framework/blazor.webassembly.js.gz"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/obj/Debug/net8.0/scopedcss/bundle/BilheteriaVirtualBlazor.styles.css",
+      "PackagePath": "staticwebassets/BilheteriaVirtualBlazor.styles.css"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/css/app.css",
+      "PackagePath": "staticwebassets/css/app.css"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/css/bootstrap/bootstrap.min.css",
+      "PackagePath": "staticwebassets/css/bootstrap/bootstrap.min.css"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/css/bootstrap/bootstrap.min.css.map",
+      "PackagePath": "staticwebassets/css/bootstrap/bootstrap.min.css.map"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/css/login.css",
+      "PackagePath": "staticwebassets/css/login.css"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/favicon.png",
+      "PackagePath": "staticwebassets/favicon.png"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/icon-192.png",
+      "PackagePath": "staticwebassets/icon-192.png"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/index.html",
+      "PackagePath": "staticwebassets/index.html"
+    },
+    {
+      "Id": "/home/stormylnx/Área de Trabalho/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/wwwroot/sample-data/weather.json",
+      "PackagePath": "staticwebassets/sample-data/weather.json"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.BilheteriaVirtualBlazor.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.BilheteriaVirtualBlazor.props",
+      "PackagePath": "build\\BilheteriaVirtualBlazor.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.BilheteriaVirtualBlazor.props",
+      "PackagePath": "buildMultiTargeting\\BilheteriaVirtualBlazor.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.BilheteriaVirtualBlazor.props",
+      "PackagePath": "buildTransitive\\BilheteriaVirtualBlazor.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

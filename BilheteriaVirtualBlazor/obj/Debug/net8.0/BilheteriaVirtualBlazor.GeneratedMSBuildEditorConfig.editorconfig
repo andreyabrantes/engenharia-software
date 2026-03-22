@@ -38,10 +38,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcHJhckluZ3Jlc3NvLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/UsuarioPc/Documents/Faculdade/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Users/UsuarioPc/Documents/Faculdade/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSG9tZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -58,10 +54,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVsYXRvcmlvcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/UsuarioPc/Documents/Faculdade/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/Pages/Weather.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcV2VhdGhlci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Users/UsuarioPc/Documents/Faculdade/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -69,7 +61,3 @@ build_metadata.AdditionalFiles.CssScope =
 [C:/Users/UsuarioPc/Documents/Faculdade/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE1haW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-9ruz9qm2jn
-
-[C:/Users/UsuarioPc/Documents/Faculdade/6-PERIODO/ENGENHARIA-DE-SOFTWARE/BilheteriaVirtualBlazor/Layout/NavMenu.razor]
-build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE5hdk1lbnUucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = b-50u0wgsr2i

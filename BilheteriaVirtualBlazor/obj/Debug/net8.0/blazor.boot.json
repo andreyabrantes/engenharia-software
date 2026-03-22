@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "BilheteriaVirtualBlazor",
   "resources": {
-    "hash": "sha256-wboF8ADV2OohHPjyKKKBp0CJlQvtw15pvaM4X781l1o=",
+    "hash": "sha256-eoIF/w6qiluYgcWsmaB9NFJ6OOzlc3YgDa3u/MMJ2Gw=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-A16ka545FHaB+QXjyJ4exXh7XpBAAIFnX8YkC4xAng8="
     },
@@ -209,10 +209,10 @@
       "mscorlib.wasm": "sha256-ovgR6YJeXMcsAhvGJVdyjhD5pU34EEAc0BGQYTUAyNk=",
       "netstandard.wasm": "sha256-90+pPOP/3NxK0buBFJlcvDw0r6Nk/i3+oM9dt2x+LPM=",
       "System.Private.CoreLib.wasm": "sha256-IXKG8p3ppN4zPjJOxht5wSXCcbFNPH6InVm7fsThBPI=",
-      "BilheteriaVirtualBlazor.wasm": "sha256-OaXtQp0OfooNpXB0OeSikQDsjoSdgNZwu/ufslE4YtA="
+      "BilheteriaVirtualBlazor.wasm": "sha256-lybTZ5ShTmQp3FoumoITVMVeQUJF6x8hYzHD6Ptkd5k="
     },
     "pdb": {
-      "BilheteriaVirtualBlazor.pdb": "sha256-uVQdBOzkN8ZCt8xd6eO34Lb3CI1H71/thPj9tqiiR8g="
+      "BilheteriaVirtualBlazor.pdb": "sha256-wpgEE9cyTYpHSbgjQtL3E5DUi88NcFfG2A9bnbuEJvg="
     }
   },
   "cacheBootResources": true,

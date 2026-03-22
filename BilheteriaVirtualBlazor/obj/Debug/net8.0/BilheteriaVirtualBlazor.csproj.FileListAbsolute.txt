@@ -2064,6 +2064,7 @@ C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\Bilheter
 C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\refint\BilheteriaVirtualBlazor.dll
 C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\BilheteriaVirtualBlazor.pdb
 C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\ref\BilheteriaVirtualBlazor.dll
-C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\compressed\z941oeqhit-{0}-djgqzff1uj-djgqzff1uj.gz
-C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\compressed\keabk4sx7i-{0}-5h9rgny8db-5h9rgny8db.gz
-C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\compressed\h8n5cb2l6b-{0}-bnhi0els59-bnhi0els59.gz
+C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\BilheteriaVirtualBlazor.sourcelink.json
+C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\compressed\z941oeqhit-{0}-bro5qch4wv-bro5qch4wv.gz
+C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\compressed\keabk4sx7i-{0}-q22106ww2e-q22106ww2e.gz
+C:\Users\UsuarioPc\Documents\Faculdade\6-PERIODO\ENGENHARIA-DE-SOFTWARE\BilheteriaVirtualBlazor\obj\Debug\net8.0\compressed\h8n5cb2l6b-{0}-hhre456jjm-hhre456jjm.gz

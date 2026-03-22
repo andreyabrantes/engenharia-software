@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BilheteriaVirtualBlazor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f55a72c1e0b54807fa5136c8fefd3518acb43d81")]
 [assembly: System.Reflection.AssemblyProductAttribute("BilheteriaVirtualBlazor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BilheteriaVirtualBlazor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

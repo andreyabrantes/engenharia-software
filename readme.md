@@ -7,10 +7,10 @@ Plataforma de comercialização e gestão de ingressos online desenvolvida com *
 | Nome | GitHub |
 |---|---|
 | Andrey Campos | [@andreyabrantes](https://github.com/andreyabrantes) |
-| Gustavo Ramos | [@andreyabrantes](https://github.com/GustaRD02) |
-| Nathan Salles | [@andreyabrantes](https://github.com/shelby1311) |
-| Cristiano Cordeiro | [@andreyabrantes](https://github.com/CristianoCSantos23) |
-| Lucas Gabriel | [@andreyabrantes](https://github.com/Lucas-zip) |
+| Gustavo Ramos | [@GustaRD02](https://github.com/GustaRD02) |
+| Nathan Salles | [@Shelby1311](https://github.com/shelby1311) |
+| Cristiano Cordeiro | [@CristianoCSantos23](https://github.com/CristianoCSantos23) |
+| Lucas Gabriel | [@Lucas-zip](https://github.com/Lucas-zip) |
 
 > Projeto orientado pelo professor André Campos.
 

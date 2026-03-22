@@ -1,58 +1,133 @@
-# 🎟️ Sistema de Bilheteria Virtual 
+# 🎟️ Sistema de Bilheteria Virtual
 
-Este projeto consiste em uma plataforma robusta para a comercialização e gestão de ingressos online. O foco principal é garantir uma experiência de compra fluida para o cliente e um controle gerencial estratégico para o organizador, mitigando riscos críticos como a concorrência de assentos.
+Plataforma de comercialização e gestão de ingressos online desenvolvida com **Blazor WebAssembly** e C#, como projeto da disciplina de Engenharia de Software — 6° Período de Ciência da Computação, Unifeso.
 
-****👥 Histórias de Usuário (Backlog)****
-ID	| Papel |	Descrição | Critério de Aceite
+## 👥 Equipe
 
-01 - Cliente | Eu quero comprar ingressos online escolhendo setor e assento para garantir minha comodidade e segurança.	Mapa interativo de assentos com status de ocupação em tempo real.
+| Nome | GitHub |
+|---|---|
+| Andrey Campos | [@andreyabrantes](https://github.com/andreyabrantes) |
+| Gustavo Ramos | — |
+| Nathan Salles | — |
+| Cristiano Cordeiro | — |
+| Lucas Gabriel | — |
 
-02 - Cliente | Eu quero receber meu ingresso digital por e-mail para acessar o evento de forma rápida e sustentável.
+> Projeto orientado pelo professor André Campos.
 
-03 - Organizador |	Eu quero cadastrar eventos com datas, setores e preços para vender ingressos de forma estruturada,interface administrativa para CRUD de eventos e precificação por lote.
+---
 
-04 - Organizador | Eu quero acompanhar relatórios de vendas em tempo real para monitorar o desempenho e tomar decisões.
+## 🚀 Como Executar
 
-📊 Matriz de Seleção de Ciclo de Vida
-Abaixo, detalhamos a estratégia de engenharia de software adotada para este ecossistema.
+### Pré-requisitos
 
-🌐 Contexto do Sistema
-O sistema opera em um ambiente de alta transacionalidade. A principal dor de sistemas de bilheteria que identificamos é o pico de acesso durante a abertura de vendas e a necessidade de consistência imediata dos dados (evitar que duas pessoas comprem o mesmo lugar. Para isso, criamos alguns critérios determinantes que irão 
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-🎯 Critérios Determinantes
+### Passos
 
-    Concorrência: O sistema deve lidar com múltiplos pedidos simultâneos, evitando fila de requisição e lentidões no sistema.
+```bash
+# 1. Clone o repositório
+git clone https://github.com/andreyabrantes/engenharia-software.git
+cd engenharia-software
 
-    Segurança: Proteção de dados sensíveis de clientes e autenticidade do ID do ingresso.
+# 2. Entre na pasta do projeto
+cd BilheteriaVirtualBlazor
 
-    Usabilidade: O fluxo de compra deve ser concluído em poucos cliques para reduzir a taxa de abandono de carrinho.
+# 3. Execute
+dotnet run
+```
 
-⚠️ Maiores Riscos Identificados
+Acesse no navegador: **http://localhost:5000** ou **https://localhost:5001**
 
-    Overbooking/Race Condition: Possibilidade de dois usuários reservarem o mesmo assento simultaneamente.
+Para desenvolvimento com hot reload:
 
-    Falha na Integração de E-mail: O cliente pagar e não receber o ingresso, gerando suporte excessivo.
+```bash
+dotnet watch
+```
 
-    Indisponibilidade: O servidor cair durante o lançamento de um evento popular.
+### Comandos úteis
 
-    Fraude: Possibilidade de um usuário utilizar o ingresso de outro comprador.
+```bash
+dotnet build        # Compilar
+dotnet clean        # Limpar build
+dotnet publish -c Release  # Publicar para produção
+```
 
-🔄 Modelo de Ciclo utilizado
-Modelo Incremental e Iterativo (Scrum/Ágil).
+---
 
-💡 Justificativa Técnica
-Diferente do modelo cascata, o ciclo iterativo permitirá que a compra e reserva seja testada e validada exaustivamente antes de avançarmos para as demais funcionalidades da interface gráfica.
+## 🔐 Contas de Teste
 
-    Feedback Antecipado: Como se trata de um projeto de graduação, as entregas incrementais irá nos permitir ajustes de rota conforme as críticas e sugestões do professor e do grupo.
+| Tipo | E-mail | Senha |
+|---|---|---|
+| Administrador | admin@bilheteria.com | admin123 |
+| Cliente | cliente@email.com | cliente123 |
 
-    Mitigação de Riscos: O risco de race condition pode ser atacado na primeira Sprint, garantindo que a base do sistema seja sólida.
-    
-****Componentes do Projeto****
+---
 
-* Andrey Campos
-* Gustavo Ramos
-* Nathan Salles
-* Cristiano Cordeiro
-* Lucas Gabriel
+## 📁 Estrutura do Projeto
 
-O projeto está sendo feito por alunos do 5°- Período de Ciência da Computação da Unifeso, para agregar à materia de Engenharia de Software do professor Andŕe Campos.
+```
+ENGENHARIA-DE-SOFTWARE/
+├── BilheteriaVirtualBlazor/        # Aplicação principal
+│   ├── Layout/                     # Layout e navbar
+│   ├── Models/                     # Modelos de dados
+│   ├── Pages/                      # Páginas Blazor
+│   │   ├── Home.razor              # Lista de eventos
+│   │   ├── ComprarIngresso.razor   # Fluxo de compra
+│   │   ├── MeusIngressos.razor     # Ingressos do usuário
+│   │   ├── CadastrarEvento.razor   # Cadastro (admin)
+│   │   └── Relatorios.razor        # Dashboard (admin)
+│   ├── Services/                   # Serviços de negócio
+│   ├── wwwroot/                    # Assets estáticos (CSS, ícones)
+│   ├── Program.cs
+│   └── App.razor
+└── docs/                           # Documentação complementar
+    └── rituais-scrum.md
+```
+
+---
+
+## 📋 Histórias de Usuário Implementadas
+
+| ID | Papel | Descrição | Status |
+|---|---|---|---|
+| US-01 | Cliente | Comprar ingressos escolhendo setor e assento | ✅ |
+| US-02 | Cliente | Receber ingresso digital com código único | ✅ |
+| US-03 | Organizador | Cadastrar eventos com setores e preços | ✅ |
+| US-04 | Organizador | Acompanhar relatórios de vendas em tempo real | ✅ |
+
+---
+
+## ⚙️ Tecnologias
+
+- **Blazor WebAssembly** — SPA com C# no frontend
+- **.NET 8.0 / C# 12**
+- **CSS3** — Design system próprio com variáveis, gradientes e responsividade
+- **Dependency Injection** nativa do .NET
+
+---
+
+## 🔄 Metodologia
+
+Modelo **Incremental e Iterativo (Scrum/Ágil)**, com entregas por Sprint para validação antecipada e mitigação de riscos como race condition em reservas simultâneas.
+
+Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
+
+---
+
+## ⚠️ Riscos Identificados
+
+| Risco | Mitigação |
+|---|---|
+| Race condition (dois usuários no mesmo assento) | Validação de disponibilidade no serviço antes de confirmar |
+| Falha no envio de e-mail | Simulação com fallback visual de confirmação |
+| Fraude de ingresso | Código único por compra |
+
+---
+
+## 🗺️ Próximos Passos
+
+- [ ] Backend com API REST e banco de dados real
+- [ ] Gateway de pagamento (Stripe / PagSeguro)
+- [ ] QR Code nos ingressos
+- [ ] Envio real de e-mails (SendGrid)
+- [ ] Sistema de check-in

@@ -1,16 +1,16 @@
 # 🎟️ Sistema de Bilheteria Virtual
 
-Plataforma de comercialização e gestão de ingressos online desenvolvida com **Blazor WebAssembly** e C#, como projeto da disciplina de Engenharia de Software — 6° Período de Ciência da Computação, Unifeso.
+Plataforma de comercialização e gestão de ingressos online desenvolvida com **Blazor WebAssembly** e C#, como projeto da disciplina de Engenharia de Software — 5° Período de Ciência da Computação, Unifeso.
 
 ## 👥 Equipe
 
 | Nome | GitHub |
 |---|---|
 | Andrey Campos | [@andreyabrantes](https://github.com/andreyabrantes) |
-| Gustavo Ramos | — |
-| Nathan Salles | — |
-| Cristiano Cordeiro | — |
-| Lucas Gabriel | — |
+| Gustavo Ramos | [@andreyabrantes](https://github.com/GustaRD02) |
+| Nathan Salles | [@andreyabrantes](https://github.com/shelby1311) |
+| Cristiano Cordeiro | [@andreyabrantes](https://github.com/CristianoCSantos23) |
+| Lucas Gabriel | [@andreyabrantes](https://github.com/Lucas-zip) |
 
 > Projeto orientado pelo professor André Campos.
 

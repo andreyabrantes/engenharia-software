@@ -128,6 +128,4 @@ Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
 
 - [ ] Backend com API REST e banco de dados real
 - [ ] Gateway de pagamento (Stripe / PagSeguro)
-- [ ] QR Code nos ingressos
-- [ ] Envio real de e-mails (SendGrid)
-- [ ] Sistema de check-in
+- [ ] Envio ingresso por e-mail (SendGrid)

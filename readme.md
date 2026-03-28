@@ -131,6 +131,4 @@ Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
 
 ## 🗺️ Próximos Passos
 
-- [ ] Backend com API REST e banco de dados real
-- [ ] Gateway de pagamento (Stripe / PagSeguro)
-- [ ] Envio ingresso por e-mail (SendGrid)
+- [ ] Banco de dados SQL

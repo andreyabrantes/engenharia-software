@@ -1,0 +1,179 @@
+@inherits LayoutComponentBase
+@using BilheteriaVirtualBlazor.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<style>
+    html, body { margin: 0; padding: 0; }
+
+    .ml-navbar {
+        position: sticky; top: 0; z-index: 1000;
+        height: 60px;
+        background: rgba(255,255,255,0.98);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid #e2e8f0;
+        display: flex; align-items: center;
+        padding: 0 2rem;
+        font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    .ml-nav-inner {
+        max-width: 1280px; width: 100%; margin: 0 auto;
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+
+    .ml-logo {
+        font-size: 1.1rem; font-weight: 800;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        text-decoration: none; letter-spacing: -0.03em; white-space: nowrap;
+    }
+
+    .ml-links { display: flex; gap: 0.15rem; list-style: none; margin: 0; padding: 0; align-items: center; }
+
+    .ml-links a {
+        text-decoration: none; color: #64748b; font-weight: 500; font-size: 0.85rem;
+        padding: 0.45rem 0.875rem; border-radius: 8px; transition: all 0.18s;
+        font-family: 'Inter', sans-serif;
+    }
+    .ml-links a:hover        { color: #4f46e5; background: #eef2ff; }
+    .ml-links a.active       { color: #4f46e5; background: #eef2ff; font-weight: 600; }
+
+    .ml-user {
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+        background: #f8fafc; border-radius: 999px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .ml-avatar {
+        width: 30px; height: 30px;
+        background: #eef2ff; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+    }
+
+    .ml-user-info { display: flex; flex-direction: column; line-height: 1.2; }
+    .ml-user-name { font-weight: 700; font-size: 0.8rem; color: #0f172a; font-family: 'Inter', sans-serif; }
+    .ml-user-role { font-size: 0.68rem; color: #64748b; font-family: 'Inter', sans-serif; }
+
+    .ml-logout {
+        display: flex; align-items: center; gap: 0.3rem;
+        background: transparent; border: none; color: #94a3b8;
+        padding: 0.35rem 0.6rem; border-radius: 6px;
+        cursor: pointer; font-weight: 600; font-size: 0.78rem;
+        font-family: 'Inter', sans-serif; transition: all 0.18s; margin-left: 0.15rem;
+    }
+    .ml-logout:hover { background: #fee2e2; color: #ef4444; }
+
+    .ml-page { min-height: calc(100vh - 60px); }
+
+    @@media (max-width: 768px) {
+        .ml-navbar { padding: 0 1rem; }
+        .ml-nav-inner { flex-wrap: wrap; height: auto; padding: 0.5rem 0; gap: 0.5rem; }
+        .ml-links { flex-wrap: wrap; justify-content: center; }
+        .ml-user-info { display: none; }
+    }
+</style>
+
+@if (AuthService.EstaAutenticado())
+{
+    <nav class="ml-navbar">
+        <div class="ml-nav-inner">
+            <a href="/" class="ml-logo">🎫 Bilheteria Virtual</a>
+
+            <ul class="ml-links">
+                <li><NavLink href="/" Match="NavLinkMatch.All">Eventos</NavLink></li>
+                @if (AuthService.EhCliente() || AuthService.EhAdmin())
+                {
+                    <li><NavLink href="/comprar">Comprar</NavLink></li>
+                    <li><NavLink href="/meus-ingressos">Meus Ingressos</NavLink></li>
+                }
+                @if (AuthService.EhAdmin())
+                {
+                    <li><NavLink href="/cadastrar">Cadastrar Evento</NavLink></li>
+                    <li><NavLink href="/relatorios">Relatórios</NavLink></li>
+                }
+            </ul>
+
+            <div class="ml-user">
+                <div class="ml-avatar">@(AuthService.EhAdmin() ? "👨💼" : "👤")</div>
+                <div class="ml-user-info">
+                    <span class="ml-user-name">@AuthService.ObterUsuarioLogado()?.Nome</span>
+                    <span class="ml-user-role">@(AuthService.EhAdmin() ? "Administrador" : "Cliente")</span>
+                </div>
+                <button class="ml-logout" @onclick="Logout">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Sair
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="ml-page">@Body</main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div>
+                <span class="footer-brand-logo">🎫 Bilheteria Virtual</span>
+                <p class="footer-brand-desc">Plataforma segura para compra e gestão de ingressos online. Seus eventos favoritos a um clique de distância.</p>
+                <div class="footer-seals">
+                    <span class="footer-seal">🔒 Compra Segura</span>
+                    <span class="footer-seal">✅ Ingresso Garantido</span>
+                    <span class="footer-seal">💳 Pagamento Protegido</span>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Navegação</div>
+                <ul class="footer-links">
+                    <li><a href="/">Eventos</a></li>
+                    <li><a href="/comprar">Comprar Ingresso</a></li>
+                    <li><a href="/meus-ingressos">Meus Ingressos</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-col-title">Empresa</div>
+                <ul class="footer-links">
+                    <li><a href="#">Sobre Nós</a></li>
+                    <li><a href="#">Como Funciona</a></li>
+                    <li><a href="#">Seja um Parceiro</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-col-title">Suporte</div>
+                <ul class="footer-links">
+                    <li><a href="#">Central de Ajuda</a></li>
+                    <li><a href="#">Fale Conosco</a></li>
+                    <li><a href="#">Reembolsos</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="footer-copy">© 2025 Bilheteria Virtual. Todos os direitos reservados.</span>
+            <div class="footer-bottom-links">
+                <a href="#">Termos de Uso</a>
+                <a href="#">Privacidade</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+    </footer>
+}
+else
+{
+    <main>@Body</main>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthStateChanged += StateHasChanged;
+        if (!AuthService.EstaAutenticado() && !Navigation.Uri.Contains("/login"))
+            Navigation.NavigateTo("/login");
+    }
+
+    private void Logout() { AuthService.Logout(); Navigation.NavigateTo("/login"); }
+    public void Dispose()  { AuthService.OnAuthStateChanged -= StateHasChanged; }
+}

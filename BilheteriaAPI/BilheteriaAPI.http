@@ -1,0 +1,6 @@
+@BilheteriaAPI_HostAddress = http://localhost:5047
+
+GET {{BilheteriaAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

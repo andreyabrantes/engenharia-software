@@ -1,0 +1,285 @@
+@page "/cadastrar"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Cadastrar Evento - Bilheteria Virtual</PageTitle>
+
+<style>
+    .img-upload-area {
+        border: 2px dashed var(--border-dark);
+        border-radius: var(--radius);
+        min-height: 140px;
+        display: flex; align-items: center; justify-content: center;
+        transition: border-color 0.18s, background 0.18s;
+        background: var(--light);
+        cursor: pointer;
+    }
+    .img-upload-area:hover, .img-upload-area.drag-over {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    .img-upload-label {
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        cursor: pointer; padding: 2rem; width: 100%; text-align: center;
+    }
+    .img-preview-wrap { position: relative; width: 100%; }
+    .img-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--radius-sm); display: block; }
+    .img-remove-btn {
+        position: absolute; top: 0.5rem; right: 0.5rem;
+        background: rgba(0,0,0,0.6); color: white; border: none;
+        border-radius: 50%; width: 28px; height: 28px; cursor: pointer;
+        font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    }
+    .img-remove-btn:hover { background: var(--danger); }
+</style>
+
+@if (!AuthService.EhAdmin())
+{
+    <div class="container">
+        <div class="card">
+            <div class="alert alert-danger">
+                <h2>⛔ Acesso Negado</h2>
+                <p>Apenas administradores podem cadastrar eventos.</p>
+            </div>
+        </div>
+    </div>
+    return;
+}
+
+<div class="container">
+    @if (!eventoCadastrado)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">📝 Cadastrar Novo Evento</h1>
+                <p class="card-subtitle">Preencha as informações do evento para começar a vender ingressos de forma estruturada e controlada</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nome do Evento</label>
+                <input type="text" class="form-control @(erroNome ? "input-error" : "")" @bind="novoEvento.Nome" placeholder="Ex: Show de Rock 2024" />
+                @if (erroNome)
+                {
+                    <span class="campo-erro">Nome do evento é obrigatório.</span>
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descrição</label>
+                <textarea class="form-control" @bind="novoEvento.Descricao" rows="3" placeholder="Descreva o evento..."></textarea>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Data e Hora</label>
+                    <input type="datetime-local" class="form-control" @bind="novoEvento.Data" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Local</label>
+                    <input type="text" class="form-control @(erroLocal ? "input-error" : "")" @bind="novoEvento.Local" placeholder="Ex: Arena Unifeso" />
+                    @if (erroLocal)
+                    {
+                        <span class="campo-erro">Local do evento é obrigatório.</span>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Imagem do Evento</label>
+                <div class="img-upload-area @(imagemArrastada ? "drag-over" : "")">
+                    @if (!string.IsNullOrEmpty(previewUrl))
+                    {
+                        <div class="img-preview-wrap">
+                            <img src="@previewUrl" class="img-preview" alt="Preview" />
+                            <button class="img-remove-btn" @onclick="RemoverImagem" type="button">✕</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <label class="img-upload-label" for="imgInput">
+                            <span style="font-size:2rem">🖼️</span>
+                            <span style="font-weight:600;color:var(--dark)">Clique para escolher uma imagem</span>
+                            <span style="font-size:0.8rem;color:var(--gray)">JPG, PNG ou WEBP — máx. 5MB</span>
+                        </label>
+                    }
+                    <InputFile id="imgInput" OnChange="OnImagemSelecionada" accept="image/*" style="display:none" />
+                </div>
+                @if (!string.IsNullOrEmpty(erroImagem))
+                {
+                    <span class="campo-erro">@erroImagem</span>
+                }
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Setores e Preços</h3>
+            <p class="setores-indicator">Setores adicionados: <strong>@novoEvento.Setores.Count</strong></p>
+            @if (erroSetores)
+            {
+                <span class="campo-erro">Todos os setores devem ter nome, preço maior que 0 e quantidade maior que 0.</span>
+            }
+
+            @foreach (var setor in novoEvento.Setores)
+            {
+                <div class="card" style="background: var(--light); margin-bottom: 1rem;">
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label class="form-label">Nome do Setor</label>
+                            <input type="text" class="form-control" @bind="setor.Nome" placeholder="Ex: Pista" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Preço (R$)</label>
+                            <input type="number" step="0.01" class="form-control" @bind="setor.Preco" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Quantidade de Ingressos</label>
+                            <input type="number" class="form-control" @bind="setor.QuantidadeTotal" />
+                        </div>
+                    </div>
+                    @if (novoEvento.Setores.Count > 1)
+                    {
+                        <button class="btn btn-outline" @onclick="() => RemoverSetor(setor)">Remover Setor</button>
+                    }
+                </div>
+            }
+
+            <button class="btn btn-outline" @onclick="AdicionarSetor" style="margin-bottom: 2rem;">
+                ➕ Adicionar Setor
+            </button>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-success" @onclick="SalvarEvento" disabled="@salvando" style="flex: 1;">
+                    @if (salvando) { <span>⏳ A guardar...</span> } else { <span>✅ Cadastrar Evento</span> }
+                </button>
+                <button class="btn btn-outline" @onclick="LimparFormulario">
+                    🔄 Limpar
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="alert alert-success">
+                <h2>✅ Evento Cadastrado com Sucesso!</h2>
+                <p style="margin-top: 1rem;"><strong>@novoEvento.Nome</strong> foi cadastrado e está pronto para vender ingressos!</p>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Resumo do Evento:</h3>
+                    <p><strong>Data:</strong> @novoEvento.Data.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Local:</strong> @novoEvento.Local</p>
+                    <p><strong>Descrição:</strong> @novoEvento.Descricao</p>
+                    <p><strong>Setores cadastrados:</strong> @novoEvento.Setores.Count</p>
+                    <p><strong>Capacidade total:</strong> @novoEvento.Setores.Sum(s => s.QuantidadeTotal) ingressos</p>
+                    <p><strong>Receita potencial:</strong> @novoEvento.Setores.Sum(s => s.Preco * s.QuantidadeTotal).ToString("C2")</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" @onclick="CadastrarNovoEvento">Cadastrar Outro Evento</button>
+        </div>
+    }
+</div>
+
+@code {
+    private Evento novoEvento = new();
+    private bool eventoCadastrado = false;
+    private bool salvando = false;
+    private bool erroNome = false;
+    private bool erroLocal = false;
+    private bool erroSetores = false;
+    private string previewUrl = string.Empty;
+    private string erroImagem = string.Empty;
+    private bool imagemArrastada = false;
+
+    protected override void OnInitialized() => InicializarNovoEvento();
+
+    private async Task OnImagemSelecionada(InputFileChangeEventArgs e)
+    {
+        erroImagem = string.Empty;
+        var file = e.File;
+        if (file.Size > 5 * 1024 * 1024) { erroImagem = "Imagem muito grande. Máximo 5MB."; return; }
+
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream(5 * 1024 * 1024).ReadAsync(buffer);
+        var base64 = Convert.ToBase64String(buffer);
+        previewUrl = $"data:{file.ContentType};base64,{base64}";
+
+        // Envia para a API salvar em disco
+        var resultado = await EventoService.UploadImagemAsync(base64, file.Name);
+        if (resultado != null)
+            novoEvento.ImagemUrl = resultado;
+        else
+            erroImagem = "Erro ao enviar imagem. Tente novamente.";
+    }
+
+    private void RemoverImagem()
+    {
+        previewUrl = string.Empty;
+        novoEvento.ImagemUrl = "🎉";
+    }
+
+    private void InicializarNovoEvento()
+    {
+        novoEvento = new Evento
+        {
+            Data = DateTime.Now.AddDays(30),
+            ImagemUrl = "🎉",
+            Setores = new List<Setor>
+            {
+                new Setor { Nome = "Pista", Preco = 50.00m, QuantidadeTotal = 100 }
+            }
+        };
+        erroNome = false;
+        erroLocal = false;
+        erroSetores = false;
+    }
+
+    private void AdicionarSetor()
+    {
+        novoEvento.Setores.Add(new Setor { Nome = "", Preco = 0, QuantidadeTotal = 0 });
+    }
+
+    private void RemoverSetor(Setor setor)
+    {
+        if (novoEvento.Setores.Count > 1)
+            novoEvento.Setores.Remove(setor);
+    }
+
+    private bool ValidarFormulario()
+    {
+        erroNome    = string.IsNullOrWhiteSpace(novoEvento.Nome);
+        erroLocal   = string.IsNullOrWhiteSpace(novoEvento.Local);
+        erroSetores = !novoEvento.Setores.Any() ||
+                      novoEvento.Setores.Any(s => string.IsNullOrWhiteSpace(s.Nome) ||
+                                                  s.Preco <= 0 || s.QuantidadeTotal <= 0);
+        return !erroNome && !erroLocal && !erroSetores;
+    }
+
+    private async Task SalvarEvento()
+    {
+        if (!ValidarFormulario()) return;
+
+        foreach (var setor in novoEvento.Setores)
+            setor.QuantidadeDisponivel = setor.QuantidadeTotal;
+
+        salvando = true;
+        var (sucesso, erro) = await EventoService.AdicionarEventoAsync(novoEvento);
+        salvando = false;
+
+        if (sucesso)
+            eventoCadastrado = true;
+        else
+            erroSetores = true; // reutiliza a área de erro para mostrar falha da API
+    }
+
+    private void LimparFormulario() => InicializarNovoEvento();
+
+    private void CadastrarNovoEvento()
+    {
+        eventoCadastrado = false;
+        InicializarNovoEvento();
+    }
+}

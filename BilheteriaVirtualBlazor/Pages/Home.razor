@@ -1,0 +1,397 @@
+@page "/"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Eventos - Bilheteria Virtual</PageTitle>
+
+<style>
+    .hp-wrap { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+
+    .hp-header { margin-bottom: 1.75rem; }
+    .hp-title  { font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.04em; margin: 0 0 0.25rem 0; }
+    .hp-sub    { color: rgba(255,255,255,0.5); font-size: 0.875rem; font-weight: 400; margin: 0; }
+
+    /* ── SEARCH ── */
+    .hp-search { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .hp-search-wrap { flex: 1; min-width: 240px; position: relative; }
+    .hp-search-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
+    .hp-search-input {
+        width: 100%; padding: 0.65rem 0.875rem 0.65rem 2.5rem;
+        border: 1.5px solid #e2e8f0; border-radius: 9px;
+        font-size: 0.875rem; font-family: inherit; background: #fff; color: #0f172a;
+        outline: none; transition: border-color 0.18s, box-shadow 0.18s; box-sizing: border-box;
+    }
+    .hp-search-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+    .hp-sort {
+        padding: 0.65rem 0.875rem; border: 1.5px solid #e2e8f0; border-radius: 9px;
+        font-size: 0.875rem; font-family: inherit; background: #fff; color: #0f172a;
+        outline: none; min-width: 180px; cursor: pointer;
+    }
+
+    /* ── FILTROS DE CATEGORIA ── */
+    .hp-cats { display: flex; gap: 0.5rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
+    .hp-cat {
+        display: flex; align-items: center; gap: 0.4rem;
+        padding: 0.45rem 1rem; border-radius: 999px;
+        border: 1.5px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.75);
+        font-size: 0.8rem; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: all 0.18s; white-space: nowrap;
+    }
+    .hp-cat:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.35); }
+    .hp-cat.on    { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 2px 8px rgba(79,70,229,0.4); }
+
+    /* ── SKELETON ── */
+    .sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+    .sk-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .sk-img  { aspect-ratio: 16 / 9; background: #e2e8f0; }
+    .sk-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .sk-line { border-radius: 6px; background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+    .sk-line-title { height: 18px; width: 75%; }
+    .sk-line-sm    { height: 12px; width: 55%; }
+    .sk-line-xs    { height: 12px; width: 40%; }
+    .sk-line-btn   { height: 38px; width: 100%; margin-top: 0.5rem; }
+    @@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── EMPTY ── */
+    .hp-empty { text-align: center; padding: 5rem 2rem; color: rgba(255,255,255,0.7); }
+    .hp-empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .hp-empty h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0; }
+    .hp-empty p  { font-size: 0.875rem; margin: 0; }
+
+    /* ── GRID ── */
+    .hp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+
+    /* ── CARD ── */
+    .ev-card {
+        background: #fff; border-radius: 16px; overflow: hidden;
+        border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: transform 0.22s cubic-bezier(0.16,1,0.3,1), box-shadow 0.22s;
+        display: flex; flex-direction: column;
+    }
+    .ev-card:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); border-color: rgba(79,70,229,0.2); }
+
+    .ev-img {
+        width: 100%; aspect-ratio: 16 / 9;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 3.5rem; position: relative; overflow: hidden;
+    }
+    .ev-img img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .ev-card:hover .ev-img img { transform: scale(1.05); }
+    .ev-img-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%);
+        pointer-events: none;
+    }
+
+    /* Badges dinâmicos */
+    .ev-badge {
+        position: absolute; top: 0.75rem; right: 0.75rem;
+        font-size: 0.68rem; font-weight: 700; padding: 0.28rem 0.65rem;
+        border-radius: 999px; font-family: inherit; letter-spacing: 0.02em;
+    }
+    .ev-badge-urgente  { background: #ef4444; color: #fff; animation: pulse-badge 1.8s ease-in-out infinite; }
+    .ev-badge-hot      { background: rgba(239,68,68,0.88); color: #fff; }
+    .ev-badge-novo     { background: #10b981; color: #fff; }
+    .ev-badge-hoje     { background: #f59e0b; color: #fff; }
+    @@keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.75} }
+
+    .ev-sold-overlay {
+        position: absolute; inset: 0; background: rgba(10,10,20,0.65);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1rem; font-weight: 800; letter-spacing: 0.15em;
+        backdrop-filter: blur(2px);
+    }
+
+    .ev-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; }
+    .ev-name { font-size: 1rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; margin: 0 0 0.5rem 0; }
+    .ev-meta { display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.625rem; }
+    .ev-meta span { font-size: 0.78rem; color: #64748b; font-weight: 500; }
+    .ev-desc {
+        font-size: 0.8rem; color: #64748b; line-height: 1.55; margin-bottom: 1rem;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .ev-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem; }
+    .ev-price-label { font-size: 0.68rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .ev-price { font-size: 1.35rem; font-weight: 800; color: #4f46e5; letter-spacing: -0.02em; }
+
+    .ev-bar-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; }
+    .ev-bar { width: 80px; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden; }
+    .ev-bar-fill { height: 100%; background: #10b981; border-radius: 2px; transition: width 0.4s; }
+    .ev-bar-fill.hot { background: #ef4444; }
+    .ev-vagas { font-size: 0.72rem; color: #64748b; font-weight: 600; }
+
+    .ev-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+    .ev-btn {
+        flex: 1; padding: 0.6rem 1rem; border: none; border-radius: 8px;
+        font-size: 0.85rem; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    }
+    .ev-btn-primary { background: #4f46e5; color: #fff; box-shadow: 0 2px 8px rgba(79,70,229,0.25); }
+    .ev-btn-primary:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,70,229,0.35); }
+    .ev-btn-disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+    .ev-btn-del {
+        padding: 0.6rem 0.75rem; border: 1.5px solid rgba(239,68,68,0.2);
+        border-radius: 8px; background: #fee2e2; color: #ef4444;
+        cursor: pointer; font-size: 1rem; transition: all 0.18s;
+    }
+    .ev-btn-del:hover { background: #ef4444; color: #fff; }
+
+    @@media (max-width: 640px) { .hp-grid, .sk-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="hp-wrap">
+    <!-- Hero Section -->
+    @if (!carregando && eventoDestaque is not null)
+    {
+        var heroPreco = eventoDestaque.Setores.Any() ? eventoDestaque.Setores.Min(s => s.Preco) : 0;
+        <div class="hero-section" style="margin: -2rem -1.5rem 2.5rem; max-width: none;">
+            @if (eventoDestaque.ImagemUrl.StartsWith("images/"))
+            {
+                <img src="@eventoDestaque.ImagemUrl" alt="@eventoDestaque.Nome" style="width:100%;height:100%;object-fit:cover;display:block;" />
+            }
+            else
+            {
+                <div style="width:100%;height:100%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:6rem;">@eventoDestaque.ImagemUrl</div>
+            }
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <div class="hero-tag">🔥 Destaque da semana</div>
+                <div class="hero-title">@eventoDestaque.Nome</div>
+                <div class="hero-meta">
+                    <span>📅 @eventoDestaque.Data.ToString("dd/MM/yyyy")</span>
+                    <span>📍 @eventoDestaque.Local</span>
+                    <span>💰 A partir de @heroPreco.ToString("C2")</span>
+                </div>
+                <button class="hero-btn" @onclick="() => ComprarIngresso(eventoDestaque.Id)">🎫 Garantir Ingresso</button>
+            </div>
+        </div>
+    }
+
+    <div class="hp-header">
+        <h1 class="hp-title">Eventos Disponíveis</h1>
+        <p class="hp-sub">Encontre e garanta seu ingresso com segurança</p>
+    </div>
+
+    <!-- Busca + Ordenação -->
+    <div class="hp-search">
+        <div class="hp-search-wrap">
+            <svg class="hp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input class="hp-search-input" type="text" placeholder="Buscar por nome, local ou descrição..."
+                   @bind="termoBusca" @bind:event="oninput" />
+        </div>
+        <select class="hp-sort" @bind="ordenacao">
+            <option value="data">📅 Mais próximos</option>
+            <option value="preco">💰 Menor preço</option>
+            <option value="ocupacao">🔥 Mais procurados</option>
+        </select>
+    </div>
+
+    <!-- Filtros de Categoria -->
+    <div class="hp-cats">
+        @foreach (var cat in categorias)
+        {
+            <button class="hp-cat @(categoriaAtiva == cat.Key ? "on" : "")"
+                    @onclick="() => FiltrarCategoria(cat.Key)">
+                <span>@cat.Icon</span> @cat.Label
+            </button>
+        }
+    </div>
+
+    <!-- Skeleton Loading -->
+    @if (carregando)
+    {
+        <div class="sk-grid">
+            @for (int i = 0; i < 6; i++)
+            {
+                <div class="sk-card">
+                    <div class="sk-img"></div>
+                    <div class="sk-body">
+                        <div class="sk-line sk-line-title"></div>
+                        <div class="sk-line sk-line-sm"></div>
+                        <div class="sk-line sk-line-xs"></div>
+                        <div class="sk-line sk-line-btn"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (!eventosFiltrados.Any())
+    {
+        <div class="hp-empty">
+            <div class="hp-empty-icon">@(termoBusca.Length > 0 || categoriaAtiva != "todos" ? "🔍" : "🎭")</div>
+            <h3>@(termoBusca.Length > 0 || categoriaAtiva != "todos" ? "Nenhum resultado encontrado" : "Nenhum evento cadastrado")</h3>
+            <p>@(termoBusca.Length > 0 || categoriaAtiva != "todos" ? "Tente outro termo ou categoria" : "Aguarde novos eventos em breve!")</p>
+        </div>
+    }
+    else
+    {
+        <div class="hp-grid">
+            @foreach (var evento in eventosFiltrados)
+            {
+                var precoMin  = evento.Setores.Any() ? evento.Setores.Min(s => s.Preco) : 0;
+                var dispTotal = evento.Setores.Sum(s => s.QuantidadeDisponivel);
+                var capTotal  = evento.Setores.Sum(s => s.QuantidadeTotal);
+                var pct       = capTotal > 0 ? (double)(capTotal - dispTotal) / capTotal * 100 : 0;
+                var isHoje    = evento.Data.Date == DateTime.Today;
+                var isNovo    = evento.Data >= DateTime.Now && (evento.Data - DateTime.Now).TotalDays <= 7;
+                var isUltimos = !evento.Esgotado && dispTotal > 0 && dispTotal <= 10;
+
+                <div class="ev-card">
+                    <div class="ev-img">
+                        @if (evento.ImagemUrl.StartsWith("images/"))
+                        {
+                            <img src="@evento.ImagemUrl" alt="@evento.Nome" />
+                        }
+                        else
+                        {
+                            <span>@evento.ImagemUrl</span>
+                        }
+                        <div class="ev-img-overlay"></div>
+                        @if (evento.Esgotado)
+                        {
+                            <div class="ev-sold-overlay">ESGOTADO</div>
+                        }
+                        else if (isUltimos)
+                        {
+                            <span class="ev-badge ev-badge-urgente">⚡ Últimos ingressos</span>
+                        }
+                        else if (isHoje)
+                        {
+                            <span class="ev-badge ev-badge-hoje">📅 Hoje</span>
+                        }
+                        else if (isNovo)
+                        {
+                            <span class="ev-badge ev-badge-novo">✨ Em breve</span>
+                        }
+                        else if (pct >= 80)
+                        {
+                            <span class="ev-badge ev-badge-hot">🔥 Quase esgotado</span>
+                        }
+                    </div>
+                    <div class="ev-body">
+                        <h3 class="ev-name">@evento.Nome</h3>
+                        <div class="ev-meta">
+                            <span>📅 @evento.Data.ToString("dd/MM/yyyy")</span>
+                            <span>📍 @evento.Local</span>
+                        </div>
+                        <p class="ev-desc">@evento.Descricao</p>
+
+                        @if (!evento.Esgotado)
+                        {
+                            <div class="ev-footer">
+                                <div>
+                                    <div class="ev-price-label">A partir de</div>
+                                    <div class="ev-price">@precoMin.ToString("C2")</div>
+                                </div>
+                                <div class="ev-bar-wrap">
+                                    <div class="ev-bar">
+                                        <div class="ev-bar-fill @(pct >= 80 ? "hot" : "")" style="width:@pct.ToString("F0")%"></div>
+                                    </div>
+                                    <span class="ev-vagas">@dispTotal vagas</span>
+                                </div>
+                            </div>
+                            <div class="ev-actions">
+                                <button class="ev-btn ev-btn-primary" @onclick="() => ComprarIngresso(evento.Id)">
+                                    🎫 Comprar Ingresso
+                                </button>
+                                @if (AuthService.EhAdmin())
+                                { <button class="ev-btn-del" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button> }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="ev-actions">
+                                <button class="ev-btn ev-btn-disabled" disabled>🚫 Esgotado</button>
+                                @if (AuthService.EhAdmin())
+                                { <button class="ev-btn-del" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button> }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Evento> eventos = new();
+    private Evento? eventoDestaque;
+    private string termoBusca   = string.Empty;
+    private string ordenacao    = "data";
+    private string categoriaAtiva = "todos";
+    private bool carregando     = true;
+
+    private record Categoria(string Key, string Icon, string Label, Func<Evento, bool> Filtro);
+
+    private readonly List<Categoria> categorias = new()
+    {
+        new("todos",   "🎯", "Todos",    _ => true),
+        new("show",    "🎸", "Shows",    e => e.Nome.Contains("show", StringComparison.OrdinalIgnoreCase)    || e.Descricao.Contains("show", StringComparison.OrdinalIgnoreCase)    || e.Descricao.Contains("banda", StringComparison.OrdinalIgnoreCase)),
+        new("teatro",  "🎭", "Teatro",   e => e.Nome.Contains("teatro", StringComparison.OrdinalIgnoreCase)  || e.Descricao.Contains("peça", StringComparison.OrdinalIgnoreCase)     || e.Descricao.Contains("teatro", StringComparison.OrdinalIgnoreCase)),
+        new("festival","🎧", "Festivais",e => e.Nome.Contains("festival", StringComparison.OrdinalIgnoreCase)|| e.Descricao.Contains("festival", StringComparison.OrdinalIgnoreCase)  || e.Descricao.Contains("dj", StringComparison.OrdinalIgnoreCase)),
+        new("esporte", "⚽", "Esportes", e => e.Nome.Contains("esporte", StringComparison.OrdinalIgnoreCase) || e.Descricao.Contains("esporte", StringComparison.OrdinalIgnoreCase)   || e.Descricao.Contains("jogo", StringComparison.OrdinalIgnoreCase)),
+        new("outros",  "✨", "Outros",   e => true),
+    };
+
+    private IEnumerable<Evento> eventosFiltrados
+    {
+        get
+        {
+            var filtroCategoria = categorias.FirstOrDefault(c => c.Key == categoriaAtiva)?.Filtro ?? (_ => true);
+            return eventos
+                .Where(e =>
+                    (string.IsNullOrWhiteSpace(termoBusca) ||
+                     e.Nome.Contains(termoBusca, StringComparison.OrdinalIgnoreCase) ||
+                     e.Local.Contains(termoBusca, StringComparison.OrdinalIgnoreCase) ||
+                     e.Descricao.Contains(termoBusca, StringComparison.OrdinalIgnoreCase)) &&
+                    (categoriaAtiva == "todos" || filtroCategoria(e)))
+                .OrderBy(e => ordenacao switch
+                {
+                    "data"     => e.Data.Ticks,
+                    "preco"    => e.Setores.Any() ? (double)e.Setores.Min(s => s.Preco) : double.MaxValue,
+                    "ocupacao" => -(e.Setores.Sum(s => s.QuantidadeTotal) > 0
+                        ? (double)(e.Setores.Sum(s => s.QuantidadeTotal - s.QuantidadeDisponivel)) / e.Setores.Sum(s => s.QuantidadeTotal)
+                        : 0),
+                    _ => e.Data.Ticks
+                });
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarEventosAsync();
+        EventoService.OnEstadoAlterado += AtualizarEventos;
+    }
+
+    private void AtualizarEventos() => InvokeAsync(async () => { await CarregarEventosAsync(); StateHasChanged(); });
+
+    private async Task CarregarEventosAsync()
+    {
+        carregando = true;
+        StateHasChanged();
+        eventos = await EventoService.ObterEventosAsync();
+        eventoDestaque = eventos
+            .Where(e => !e.Esgotado && e.Data >= DateTime.Now)
+            .OrderByDescending(e => e.Setores.Sum(s => s.QuantidadeTotal - s.QuantidadeDisponivel))
+            .FirstOrDefault();
+        carregando = false;
+    }
+
+    private void FiltrarCategoria(string key) => categoriaAtiva = key;
+    private void ComprarIngresso(int id) => Navigation.NavigateTo($"/comprar?eventoId={id}");
+    private async Task ExcluirEvento(int id) { await EventoService.ExcluirEventoAsync(id); await CarregarEventosAsync(); }
+    public void Dispose() => EventoService.OnEstadoAlterado -= AtualizarEventos;
+}

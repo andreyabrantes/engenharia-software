@@ -100,6 +100,13 @@ engenharia-software-3/
 | US-03 | Organizador | Cadastrar eventos com setores e preços | ✅ |
 | US-04 | Organizador | Acompanhar relatórios de vendas em tempo real | ✅ |
 
+## Critérios de aceitação
+
+| US-01 | Cliente | Recurso de comprar ingresso, escolha de setor e assento implementadas na aba COMPRAR
+| US-02 | Cliente | Recebimento através do e-mail cadastrado no ato da compra (Qr-Code e Código único)
+| US-03 | Organizador | Cadastro de eventos, setor e preços na aba "Cadastrar Eventos" quando está logado como ADMIN
+| US-04 | Organizador | Possibilidade de visualizar e acompanhar o relatório de vendas pelo recurso Relatórios, quando logado como ADMIN
+
 ---
 
 ## ⚙️ Tecnologias
@@ -114,8 +121,6 @@ engenharia-software-3/
 ## 🔄 Metodologia
 
 Modelo **Incremental e Iterativo (Scrum/Ágil)**, com entregas por Sprint para validação antecipada e mitigação de riscos como race condition em reservas simultâneas.
-
-Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
 
 ---
 

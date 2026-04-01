@@ -67,8 +67,8 @@ dotnet publish -c Release  # Publicar para produção
 
 | Tipo | E-mail |
 |---|---|
-| Administrador | admin@bilheteria.com |
-| Cliente | cliente@email.com |
+| Administrador | admin@bilheteria.com | admin123
+| Cliente | cliente@email.com | cliente123
 
 ---
 

@@ -95,10 +95,10 @@ engenharia-software-3/
 
 | ID | Papel | Descrição | Status |
 |---|---|---|---|
-| US-01 | Cliente | Comprar ingressos escolhendo setor e assento | ✅ |
-| US-02 | Cliente | Receber ingresso digital com código único | ✅ |
-| US-03 | Organizador | Cadastrar eventos com setores e preços | ✅ |
-| US-04 | Organizador | Acompanhar relatórios de vendas em tempo real | ✅ |
+| US-01 | Cliente | Como cliente, eu quero poder comprar ingressos escolhendo setor e assento para minha comodidade | ✅ |
+| US-02 | Cliente | Como cliente, eu quero poder receber meu ingresso de forma digital por e-mail | ✅ |
+| US-03 | Organizador | Como organizador, eu quero poder cadastrar eventos, editando setores e preços | ✅ |
+| US-04 | Organizador | Como organizador, eu quero acompanhar meus relatórios de vendas por evento para melhor controle | ✅ |
 
 ## ✅ Critérios de Aceitação
 

@@ -1,0 +1,448 @@
+@page "/comprar"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Comprar Ingresso - Bilheteria Virtual</PageTitle>
+
+<div class="container">
+    @if (!compraConcluida)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">🎫 Comprar Ingresso</h1>
+                <p class="card-subtitle">Selecione o evento, setor e assentos desejados</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(mensagemErro))
+            {
+                <div class="alert alert-danger">⚠️ @mensagemErro</div>
+            }
+
+            <!-- ETAPA 1: Evento / Setor / Assentos -->
+            @if (!etapaPagamento)
+            {
+                <div class="form-group">
+                    <label class="form-label">Selecione o Evento</label>
+                    <select class="form-control" @onchange="SelecionarEvento">
+                        <option value="">Escolha um evento...</option>
+                        @foreach (var evento in eventos)
+                        {
+                            <option value="@evento.Id" selected="@(evento.Id == eventoIdInicial)" disabled="@evento.Esgotado">
+                                @evento.Nome - @evento.Data.ToString("dd/MM/yyyy") @(evento.Esgotado ? "— ESGOTADO" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                @if (eventoSelecionado != null)
+                {
+                    <div class="form-group">
+                        <label class="form-label">Selecione o Setor</label>
+                        <div class="grid grid-2">
+                            @foreach (var setor in eventoSelecionado.Setores)
+                            {
+                                <div class="setor-card @(setorSelecionado?.Id == setor.Id ? "selected" : "") @(setor.Esgotado ? "esgotado" : "")"
+                                     @onclick="async () => { if (!setor.Esgotado) await SelecionarSetor(setor); }">
+                                    <h3 class="event-title">@setor.Nome</h3>
+                                    <div class="event-price">@setor.Preco.ToString("C2")</div>
+                                    <div class="event-info">
+                                        @if (setor.Esgotado)
+                                        { <span class="badge badge-danger">Esgotado</span> }
+                                        else
+                                        { <span>@setor.QuantidadeDisponivel disponíveis de @setor.QuantidadeTotal</span> }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (setorSelecionado != null && assentos.Any())
+                {
+                    <div class="form-group">
+                        <label class="form-label">
+                            Selecione os Assentos <span style="color:var(--gray);font-weight:400">(máximo 4)</span>
+                        </label>
+                        <div class="legenda-assentos">
+                            <span class="legenda-item"><span class="legenda-box disponivel"></span> Disponível</span>
+                            <span class="legenda-item"><span class="legenda-box selecionado"></span> Selecionado</span>
+                            <span class="legenda-item"><span class="legenda-box ocupado"></span> Ocupado</span>
+                        </div>
+                        <div class="seat-selector">
+                            @foreach (var assento in assentos)
+                            {
+                                <div class="seat @(assento.Status == StatusAssento.Ocupado ? "occupied" : "") @(assento.Selecionado ? "selected" : "")"
+                                     title="@assento.Numero"
+                                     @onclick="() => SelecionarAssento(assento)">
+                                    @assento.Numero
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (assentosSelecionados.Any())
+                    {
+                        <div class="resumo-compra">
+                            <h3>🧾 Resumo da Compra</h3>
+                            <div class="resumo-grid">
+                                <div><span class="resumo-label">Evento</span><span>@eventoSelecionado!.Nome</span></div>
+                                <div><span class="resumo-label">Data</span><span>@eventoSelecionado!.Data.ToString("dd/MM/yyyy HH:mm")</span></div>
+                                <div><span class="resumo-label">Local</span><span>@eventoSelecionado!.Local</span></div>
+                                <div><span class="resumo-label">Setor</span><span>@setorSelecionado.Nome</span></div>
+                                <div><span class="resumo-label">Assentos</span><span>@string.Join(", ", assentosSelecionados.Select(a => a.Numero))</span></div>
+                                <div><span class="resumo-label">Quantidade</span><span>@assentosSelecionados.Count ingresso(s)</span></div>
+                            </div>
+                            <div class="resumo-total">
+                                Total: @((setorSelecionado.Preco * assentosSelecionados.Count).ToString("C2"))
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control @(erroNome ? "input-error" : "")"
+                                   @bind="nomeCliente" placeholder="Seu nome completo" />
+                            @if (erroNome) { <span class="campo-erro">Nome é obrigatório</span> }
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">E-mail para receber o ingresso</label>
+                            <input type="email" class="form-control @(erroEmail ? "input-error" : "")"
+                                   @bind="emailCliente" placeholder="seu@email.com" />
+                            @if (erroEmail) { <span class="campo-erro">Informe um e-mail válido</span> }
+                        </div>
+
+                        <button class="btn btn-primary" @onclick="IrParaPagamento" style="width:100%;font-size:1.1rem">
+                            💳 Escolher Forma de Pagamento →
+                        </button>
+                    }
+                }
+            }
+
+            <!-- ETAPA 2: Pagamento -->
+            @if (etapaPagamento)
+            {
+                <div class="resumo-compra" style="margin-bottom:1.5rem">
+                    <h3>🧾 Resumo</h3>
+                    <div class="resumo-grid">
+                        <div><span class="resumo-label">Evento</span><span>@eventoSelecionado!.Nome</span></div>
+                        <div><span class="resumo-label">Setor</span><span>@setorSelecionado!.Nome</span></div>
+                        <div><span class="resumo-label">Assentos</span><span>@string.Join(", ", assentosSelecionados.Select(a => a.Numero))</span></div>
+                        <div><span class="resumo-label">E-mail</span><span>@emailCliente</span></div>
+                    </div>
+                    <div class="resumo-total">
+                        Total: @((setorSelecionado!.Preco * assentosSelecionados.Count).ToString("C2"))
+                    </div>
+                </div>
+
+                <label class="form-label" style="margin-bottom:1rem;display:block">💳 Escolha a forma de pagamento</label>
+
+                <div class="pagamento-grid">
+                    <div class="pagamento-card @(pagamentoSelecionado == "PIX" ? "selected" : "")" @onclick='() => pagamentoSelecionado = "PIX"'>
+                        <div class="pagamento-icon">📱</div>
+                        <strong>PIX</strong>
+                        <small>Aprovação imediata</small>
+                    </div>
+                    <div class="pagamento-card @(pagamentoSelecionado == "CARTAO" ? "selected" : "")" @onclick='() => pagamentoSelecionado = "CARTAO"'>
+                        <div class="pagamento-icon">💳</div>
+                        <strong>Cartão</strong>
+                        <small>Crédito ou débito</small>
+                    </div>
+                    <div class="pagamento-card @(pagamentoSelecionado == "BOLETO" ? "selected" : "")" @onclick='() => pagamentoSelecionado = "BOLETO"'>
+                        <div class="pagamento-icon">🧾</div>
+                        <strong>Boleto</strong>
+                        <small>Vence em 3 dias</small>
+                    </div>
+                    <div class="pagamento-card @(pagamentoSelecionado == "DINHEIRO" ? "selected" : "")" @onclick='() => pagamentoSelecionado = "DINHEIRO"'>
+                        <div class="pagamento-icon">💵</div>
+                        <strong>Dinheiro</strong>
+                        <small>Pagamento presencial</small>
+                    </div>
+                </div>
+
+                @if (pagamentoSelecionado == "CARTAO")
+                {
+                    <div class="form-group" style="margin-top:1rem">
+                        <label class="form-label">Número do Cartão (16 dígitos)</label>
+                        <input type="text" class="form-control" @bind="numeroCartao"
+                               placeholder="0000000000000000" maxlength="16" />
+                    </div>
+                }
+
+                <div style="display:flex;gap:1rem;margin-top:1.5rem">
+                    <button class="btn btn-outline" @onclick="VoltarParaAssentos" style="flex:1">
+                        ← Voltar
+                    </button>
+                    <button class="btn btn-success" @onclick="FinalizarCompra"
+                            disabled="@(processando || string.IsNullOrEmpty(pagamentoSelecionado))"
+                            style="flex:2;font-size:1.1rem">
+                        @if (processando) { <span>⏳ Processando...</span> }
+                        else { <span>✅ Confirmar Pagamento</span> }
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="alert alert-success">
+                <h2>✅ Compra Realizada com Sucesso!</h2>
+                <p style="margin-top:1rem">
+                    Seu ingresso digital foi enviado para <strong>@emailCliente</strong>
+                </p>
+                <p style="margin-top:0.5rem;font-size:0.9rem;opacity:0.8">
+                    Forma de pagamento: <strong>@pagamentoSelecionado</strong>
+                </p>
+            </div>
+
+            <div class="ingresso-digital">
+                <div class="ingresso-header">
+                    @if (eventoSelecionado?.ImagemUrl.StartsWith("images/") == true)
+                    {
+                        <img src="@eventoSelecionado.ImagemUrl" alt="@eventoSelecionado.Nome"
+                             style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
+                    }
+                    else
+                    {
+                        <span class="ingresso-emoji">@eventoSelecionado?.ImagemUrl</span>
+                    }
+                    <div>
+                        <h2>@eventoSelecionado?.Nome</h2>
+                        <p>@eventoSelecionado?.Data.ToString("dd/MM/yyyy HH:mm") — @eventoSelecionado?.Local</p>
+                    </div>
+                </div>
+                <div class="ingresso-body">
+                    <div class="ingresso-info-grid">
+                        <div><span class="resumo-label">Titular</span><strong>@nomeCliente</strong></div>
+                        <div><span class="resumo-label">Setor</span><strong>@setorSelecionado?.Nome</strong></div>
+                        <div><span class="resumo-label">Assentos</span><strong>@string.Join(", ", assentosSelecionados.Select(a => a.Numero))</strong></div>
+                        <div><span class="resumo-label">Valor Pago</span><strong>@((setorSelecionado!.Preco * assentosSelecionados.Count).ToString("C2"))</strong></div>
+                    </div>
+                    <div class="ingresso-codigo">
+                        <span class="resumo-label">Código do Ingresso</span>
+                        <strong class="codigo-destaque">@codigoIngresso</strong>
+                        <small>Apresente este código na entrada do evento</small>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:1rem;margin-top:1.5rem">
+                <button class="btn btn-primary" @onclick="NovaCompra" style="flex:1">🎫 Comprar Outro</button>
+                <button class="btn btn-outline" @onclick="IrParaHome" style="flex:1">🏠 Voltar aos Eventos</button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .pagamento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .pagamento-card {
+        display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+        padding: 1.25rem 0.75rem; border: 2px solid var(--border); border-radius: 12px;
+        cursor: pointer; transition: all 0.2s; background: #f8fafc; text-align: center;
+    }
+    .pagamento-card:hover { border-color: var(--primary); background: #ede9fe; }
+    .pagamento-card.selected { border-color: var(--primary); background: #ede9fe; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+    .pagamento-card.selected strong { color: var(--primary); }
+    .pagamento-icon { font-size: 2rem; }
+    .pagamento-card strong { font-size: 0.95rem; color: #1e293b; }
+    .pagamento-card small { font-size: 0.75rem; color: #64748b; }
+
+    .legenda-assentos { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .legenda-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: var(--gray); }
+    .legenda-box { width: 20px; height: 20px; border-radius: 4px; display: inline-block; }
+    .legenda-box.disponivel { background: white; border: 2px solid var(--border); }
+    .legenda-box.selecionado { background: var(--primary); }
+    .legenda-box.ocupado { background: var(--gray); }
+
+    .setor-card.esgotado { opacity: 0.5; cursor: not-allowed; }
+    .resumo-compra { background: var(--light); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--primary); }
+    .resumo-compra h3 { margin-bottom: 1rem; color: var(--dark); }
+    .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .resumo-grid > div { display: flex; flex-direction: column; gap: 0.2rem; }
+    .resumo-label { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .resumo-total { font-size: 1.8rem; font-weight: 700; color: var(--primary); border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; }
+    .input-error { border-color: var(--danger) !important; }
+    .campo-erro { color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem; display: block; }
+
+    .ingresso-digital { border: 2px dashed var(--primary); border-radius: 16px; overflow: hidden; margin-top: 1.5rem; }
+    .ingresso-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .ingresso-emoji { font-size: 3rem; }
+    .ingresso-header h2 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .ingresso-header p { opacity: 0.9; font-size: 0.9rem; }
+    .ingresso-body { padding: 1.5rem; }
+    .ingresso-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .ingresso-info-grid > div { display: flex; flex-direction: column; gap: 0.2rem; }
+    .ingresso-codigo { background: var(--light); border-radius: 8px; padding: 1rem; text-align: center; display: flex; flex-direction: column; gap: 0.5rem; }
+    .codigo-destaque { font-size: 1.5rem; letter-spacing: 0.1em; color: var(--primary); font-family: monospace; }
+</style>
+
+@code {
+    private List<Evento> eventos = new();
+    private Evento? eventoSelecionado;
+    private Setor? setorSelecionado;
+    private List<Assento> assentos = new();
+    private List<Assento> assentosSelecionados = new();
+    private string nomeCliente = "";
+    private string emailCliente = "";
+    private string pagamentoSelecionado = "";
+    private string numeroCartao = "";
+    private bool etapaPagamento = false;
+    private bool compraConcluida = false;
+    private bool processando = false;
+    private string codigoIngresso = "";
+    private string mensagemErro = "";
+    private int eventoIdInicial = 0;
+    private bool erroNome = false;
+    private bool erroEmail = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        eventos = await EventoService.ObterEventosAsync();
+        EventoService.OnEstadoAlterado += AtualizarEstado;
+
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        if (int.TryParse(query["eventoId"], out var eventoId))
+        {
+            eventoIdInicial = eventoId;
+            eventoSelecionado = eventos.FirstOrDefault(e => e.Id == eventoId);
+        }
+
+        var usuario = AuthService.ObterUsuarioLogado();
+        if (usuario != null)
+        {
+            nomeCliente  = usuario.Nome;
+            emailCliente = usuario.Email;
+        }
+    }
+
+    private void AtualizarEstado()
+    {
+        InvokeAsync(async () =>
+        {
+            eventos = await EventoService.ObterEventosAsync();
+            if (eventoSelecionado != null)
+                eventoSelecionado = eventos.FirstOrDefault(e => e.Id == eventoSelecionado.Id);
+            if (setorSelecionado != null && eventoSelecionado != null)
+            {
+                setorSelecionado = eventoSelecionado.Setores.FirstOrDefault(s => s.Id == setorSelecionado.Id);
+                assentos = await EventoService.ObterAssentosAsync(eventoSelecionado.Id, setorSelecionado?.Id ?? 0);
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void SelecionarEvento(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var eventoId)) return;
+        eventoSelecionado = eventos.FirstOrDefault(ev => ev.Id == eventoId);
+        setorSelecionado = null;
+        assentos.Clear();
+        assentosSelecionados.Clear();
+        mensagemErro = "";
+    }
+
+    private async Task SelecionarSetor(Setor setor)
+    {
+        setorSelecionado = setor;
+        assentosSelecionados.Clear();
+        mensagemErro = "";
+        assentos = await EventoService.ObterAssentosAsync(eventoSelecionado!.Id, setor.Id);
+    }
+
+    private void SelecionarAssento(Assento assento)
+    {
+        if (assento.Ocupado) return;
+        if (assento.Selecionado)
+        {
+            assento.Selecionado = false;
+            assentosSelecionados.Remove(assento);
+        }
+        else if (assentosSelecionados.Count < 4)
+        {
+            assento.Selecionado = true;
+            assentosSelecionados.Add(assento);
+        }
+    }
+
+    private bool ValidarFormulario()
+    {
+        erroNome  = string.IsNullOrWhiteSpace(nomeCliente);
+        erroEmail = string.IsNullOrWhiteSpace(emailCliente) || !emailCliente.Contains('@');
+        return !erroNome && !erroEmail;
+    }
+
+    private void IrParaPagamento()
+    {
+        mensagemErro = "";
+        if (!ValidarFormulario()) return;
+        etapaPagamento = true;
+    }
+
+    private void VoltarParaAssentos()
+    {
+        etapaPagamento = false;
+        pagamentoSelecionado = "";
+        numeroCartao = "";
+        mensagemErro = "";
+    }
+
+    private async Task FinalizarCompra()
+    {
+        if (string.IsNullOrEmpty(pagamentoSelecionado)) return;
+        if (pagamentoSelecionado == "CARTAO" && numeroCartao.Length < 16)
+        {
+            mensagemErro = "Informe um número de cartão válido (16 dígitos).";
+            return;
+        }
+
+        mensagemErro = "";
+        processando = true;
+
+        var assentoIds = assentosSelecionados.Select(a => a.Id).ToList();
+        var (sucesso, mensagem, codigo) = await EventoService.FinalizarCompraAsync(
+            nomeCliente, emailCliente,
+            eventoSelecionado!.Id, setorSelecionado!.Id,
+            assentoIds);
+
+        processando = false;
+
+        if (sucesso)
+        {
+            codigoIngresso = codigo;
+            compraConcluida = true;
+        }
+        else
+        {
+            mensagemErro = mensagem;
+            etapaPagamento = false;
+            assentosSelecionados.Clear();
+            assentos = await EventoService.ObterAssentosAsync(eventoSelecionado.Id, setorSelecionado.Id);
+        }
+    }
+
+    private void IrParaHome() => Navigation.NavigateTo("/");
+
+    private async Task NovaCompra()
+    {
+        compraConcluida = false;
+        etapaPagamento = false;
+        eventoSelecionado = null;
+        setorSelecionado = null;
+        assentos.Clear();
+        assentosSelecionados.Clear();
+        codigoIngresso = "";
+        mensagemErro = "";
+        pagamentoSelecionado = "";
+        numeroCartao = "";
+        erroNome = erroEmail = false;
+        eventos = await EventoService.ObterEventosAsync();
+    }
+
+    public void Dispose() => EventoService.OnEstadoAlterado -= AtualizarEstado;
+}

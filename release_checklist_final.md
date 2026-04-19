@@ -1,0 +1,23 @@
+# Release Checklist — TicketPrime AV1
+
+- [x] Estrutura de pastas `/src`, `/db`, `/docs`, `/tests` criada
+- [x] Projeto da API movido para `/src`
+- [x] Refatoração para Minimal API (Controllers removidos)
+- [x] Rota `POST /api/eventos` implementada
+- [x] Rota `GET /api/eventos` implementada
+- [x] Rota `POST /api/cupons` implementada
+- [x] Rota `POST /api/usuarios` com validação de CPF duplicado implementada
+- [x] Status codes explícitos (`Results.Ok`, `Results.Created`, `Results.BadRequest`)
+- [x] Model `Cupom` criado com coluna `valorMinimoregra`
+- [x] Propriedade `Cpf` adicionada ao model `Usuario`
+- [x] `AppDbContext` mantido para demo com banco local
+- [x] Script SQL `/db/script.sql` gerado com todas as tabelas
+- [x] `/docs/requisitos.md` com 3 histórias de usuário e critério BDD
+- [x] `/docs/operacao.md` com Matriz de Riscos
+- [x] Migration gerada para `Cupom` e `Cpf`
+- [x] Projeto xUnit criado em `/tests`
+- [x] Testes com Assert implementados (9 testes — CupomTests, UsuarioTests, EventoTests)
+- [x] Validação Fail-Fast (400 BadRequest) em todos os endpoints
+- [x] BDD documentado para US-01, US-02 e US-03 em `/docs/requisitos.md`
+- [x] README executavel com `cd src && dotnet run`
+- [x] Senhas removidas do README

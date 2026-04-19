@@ -1,0 +1,295 @@
+@page "/meus-ingressos"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@implements IDisposable
+
+<PageTitle>Meus Ingressos - Bilheteria Virtual</PageTitle>
+
+<style>
+    .mi-wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+
+    .mi-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; }
+    .mi-title  { font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; margin: 0 0 0.25rem 0; }
+    .mi-sub    { color: rgba(255,255,255,0.6); font-size: 0.875rem; margin: 0; }
+    .mi-count  {
+        background: rgba(255,255,255,0.12); color: #fff;
+        padding: 0.35rem 0.875rem; border-radius: 999px;
+        font-size: 0.8rem; font-weight: 700;
+        border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .mi-empty { text-align: center; padding: 5rem 2rem; color: rgba(255,255,255,0.7); }
+    .mi-empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .mi-empty h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem 0; }
+    .mi-empty p  { font-size: 0.875rem; margin: 0 0 1.5rem 0; }
+    .mi-empty-btn {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: #4f46e5; color: #fff; text-decoration: none;
+        padding: 0.65rem 1.5rem; border-radius: 9px; font-weight: 600; font-size: 0.875rem;
+        font-family: inherit; transition: all 0.18s;
+        box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+    }
+    .mi-empty-btn:hover { background: #4338ca; transform: translateY(-1px); }
+
+    .mi-list { display: flex; flex-direction: column; gap: 1rem; }
+
+    .mi-card {
+        background: #fff; border-radius: 16px; overflow: hidden;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .mi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+    .mi-card-head {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff; padding: 1.25rem 1.5rem;
+        display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+    }
+    .mi-event-name { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.375rem 0; letter-spacing: -0.01em; }
+    .mi-event-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; opacity: 0.88; }
+    .mi-badge-ativo {
+        background: rgba(255,255,255,0.18); color: #fff;
+        padding: 0.25rem 0.75rem; border-radius: 999px;
+        font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+        border: 1px solid rgba(255,255,255,0.28);
+    }
+    .mi-badge-reembolsado {
+        background: rgba(220, 38, 38, 0.18); color: #fca5a5;
+        padding: 0.25rem 0.75rem; border-radius: 999px;
+        font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+        border: 1px solid rgba(220, 38, 38, 0.28);
+    }
+
+    .mi-card-body { padding: 1.25rem 1.5rem; }
+
+    .mi-details {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 1rem; margin-bottom: 1.25rem;
+        padding-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0;
+    }
+    .mi-detail { display: flex; flex-direction: column; gap: 0.2rem; }
+    .mi-detail-label { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .mi-detail-val   { font-size: 0.875rem; font-weight: 600; color: #0f172a; }
+    .mi-detail-val.price { color: #4f46e5; font-size: 1rem; font-weight: 800; }
+
+    .mi-codigo {
+        background: #f8fafc; border-radius: 10px; padding: 1rem 1.25rem;
+        display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+        border: 1.5px dashed #cbd5e1;
+    }
+    .mi-codigo-label { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .mi-codigo-val   { font-size: 1.3rem; font-weight: 800; color: #4f46e5; font-family: 'Courier New', monospace; letter-spacing: 0.1em; }
+    .mi-codigo-hint  { font-size: 0.72rem; color: #94a3b8; }
+
+    .mi-card-footer { padding: 0.875rem 1.5rem; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; }
+    .btn-reembolso {
+        background: #fff; color: #dc2626; border: 1.5px solid #fca5a5;
+        padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+        cursor: pointer; font-family: inherit; transition: all 0.18s;
+    }
+    .btn-reembolso:hover { background: #fef2f2; border-color: #dc2626; }
+    .btn-reembolso:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-box {
+        background: #fff; border-radius: 16px; padding: 2rem; max-width: 420px; width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal-icon { font-size: 2.5rem; text-align: center; margin-bottom: 1rem; }
+    .modal-title { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0; text-align: center; }
+    .modal-desc  { font-size: 0.875rem; color: #64748b; text-align: center; margin: 0 0 1.5rem 0; }
+    .modal-valor { font-size: 1.25rem; font-weight: 800; color: #4f46e5; text-align: center; margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: 0.75rem; }
+    .btn-confirmar {
+        flex: 1; background: #dc2626; color: #fff; border: none;
+        padding: 0.65rem; border-radius: 9px; font-weight: 700; font-size: 0.875rem;
+        cursor: pointer; font-family: inherit; transition: background 0.18s;
+    }
+    .btn-confirmar:hover { background: #b91c1c; }
+    .btn-cancelar-modal {
+        flex: 1; background: #f1f5f9; color: #475569; border: none;
+        padding: 0.65rem; border-radius: 9px; font-weight: 700; font-size: 0.875rem;
+        cursor: pointer; font-family: inherit; transition: background 0.18s;
+    }
+    .btn-cancelar-modal:hover { background: #e2e8f0; }
+
+    .alert-sucesso {
+        background: #f0fdf4; border: 1px solid #86efac; color: #166534;
+        padding: 0.875rem 1.25rem; border-radius: 10px; margin-bottom: 1rem;
+        font-size: 0.875rem; font-weight: 600;
+    }
+    .alert-erro {
+        background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b;
+        padding: 0.875rem 1.25rem; border-radius: 10px; margin-bottom: 1rem;
+        font-size: 0.875rem; font-weight: 600;
+    }
+</style>
+
+<div class="mi-wrap">
+    <div class="mi-header">
+        <div>
+            <h1 class="mi-title">🎟️ Meus Ingressos</h1>
+            <p class="mi-sub">Seus ingressos comprados</p>
+        </div>
+        @if (compras != null && compras.Any())
+        { <span class="mi-count">@compras.Count ingresso(s)</span> }
+    </div>
+
+    @if (!string.IsNullOrEmpty(mensagemSucesso))
+    { <div class="alert-sucesso">✅ @mensagemSucesso</div> }
+
+    @if (!string.IsNullOrEmpty(mensagemErro))
+    { <div class="alert-erro">⚠️ @mensagemErro</div> }
+
+    @if (compras == null || !compras.Any())
+    {
+        <div class="mi-empty">
+            <div class="mi-empty-icon">🎫</div>
+            <h3>Nenhum ingresso ainda</h3>
+            <p>Você ainda não comprou nenhum ingresso.</p>
+            <a href="/" class="mi-empty-btn">🎉 Ver Eventos</a>
+        </div>
+    }
+    else
+    {
+        <div class="mi-list">
+            @foreach (var compra in compras!.OrderByDescending(c => c.DataCompra))
+            {
+                <div class="mi-card">
+                    <div class="mi-card-head">
+                        <div>
+                            <h3 class="mi-event-name">@compra.EventoNome</h3>
+                            <div class="mi-event-meta">
+                                <span>📅 @compra.EventoData.ToString("dd/MM/yyyy HH:mm")</span>
+                                <span>📍 @compra.EventoLocal</span>
+                            </div>
+                        </div>
+                        @if (compra.Status == 1)
+                        {
+                            <span class="mi-badge-reembolsado">❌ Reembolsado</span>
+                        }
+                        else
+                        {
+                            <span class="mi-badge-ativo">✓ Ativo</span>
+                        }
+                    </div>
+                    <div class="mi-card-body">
+                        <div class="mi-details">
+                            <div class="mi-detail">
+                                <span class="mi-detail-label">Setor</span>
+                                <span class="mi-detail-val">@compra.SetorNome</span>
+                            </div>
+                            <div class="mi-detail">
+                                <span class="mi-detail-label">Assentos</span>
+                                <span class="mi-detail-val">@string.Join(", ", compra.NumerosAssentos)</span>
+                            </div>
+                            <div class="mi-detail">
+                                <span class="mi-detail-label">Valor Pago</span>
+                                <span class="mi-detail-val price">@compra.ValorTotal.ToString("C2")</span>
+                            </div>
+                            <div class="mi-detail">
+                                <span class="mi-detail-label">Comprado em</span>
+                                <span class="mi-detail-val">@compra.DataCompra.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </div>
+                        <div class="mi-codigo">
+                            <span class="mi-codigo-label">Código de Acesso</span>
+                            <span class="mi-codigo-val">@compra.CodigoIngresso</span>
+                            <span class="mi-codigo-hint">Apresente na entrada do evento</span>
+                        </div>
+                    </div>
+                    <div class="mi-card-footer">
+                        @if (compra.Status == 1)
+                        {
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #94a3b8; padding: 0.5rem 0;">Reembolso Efetuado</span>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn-reembolso" @onclick:preventDefault="true" @onclick="() => AbrirModalReembolso(compra)" disabled="@processando">
+                                💸 Reembolso
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (compraParaReembolsar != null)
+        {
+            <div class="modal-overlay" @onclick="FecharModal">
+                <div class="modal-box" @onclick:stopPropagation>
+                    <div class="modal-icon">💸</div>
+                    <p class="modal-title">Solicitar Reembolso</p>
+                    <p class="modal-desc">Tem certeza que deseja cancelar os ingressos de <strong>@compraParaReembolsar.EventoNome</strong>? Os assentos serão liberados.</p>
+                    <p class="modal-valor">Reembolso: @compraParaReembolsar.ValorTotal.ToString("C2")</p>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancelar-modal" @onclick:preventDefault="true" @onclick="FecharModal" disabled="@processando">Cancelar</button>
+                        <button type="button" class="btn-confirmar" @onclick:preventDefault="true" @onclick="ConfirmarReembolso" disabled="@processando">
+                            @(processando ? "Processando..." : "Confirmar Reembolso")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Compra>? compras;
+    private Compra? compraParaReembolsar;
+    private bool processando;
+    private string mensagemSucesso = string.Empty;
+    private string mensagemErro = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarComprasAsync();
+        EventoService.OnEstadoAlterado += Atualizar;
+    }
+
+    private void Atualizar() => InvokeAsync(async () => { await CarregarComprasAsync(); StateHasChanged(); });
+
+    private async Task CarregarComprasAsync()
+    {
+        var email = AuthService.ObterUsuarioLogado()?.Email ?? "";
+        compras = await EventoService.ObterComprasPorEmailAsync(email);
+    }
+
+    private void AbrirModalReembolso(Compra compra)
+    {
+        compraParaReembolsar = compra;
+        mensagemSucesso = string.Empty;
+        mensagemErro = string.Empty;
+    }
+
+    private void FecharModal() => compraParaReembolsar = null;
+
+    private async Task ConfirmarReembolso()
+    {
+        if (compraParaReembolsar is null) return;
+        processando = true;
+
+        var (sucesso, mensagem, _) = await EventoService.ReembolsarAsync(compraParaReembolsar.CodigoIngresso);
+
+        if (sucesso)
+        {
+            mensagemSucesso = mensagem;
+            await CarregarComprasAsync();
+        }
+        else
+        {
+            mensagemErro = mensagem;
+        }
+
+        compraParaReembolsar = null;
+        processando = false;
+    }
+
+    public void Dispose() => EventoService.OnEstadoAlterado -= Atualizar;
+}

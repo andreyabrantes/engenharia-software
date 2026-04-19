@@ -1,0 +1,200 @@
+@page "/relatorios"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject EventoService EventoService
+@inject AuthService AuthService
+@implements IDisposable
+
+<PageTitle>Relatórios - Bilheteria Virtual</PageTitle>
+
+<style>
+    .rp-wrap { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; font-family: 'Inter', -apple-system, sans-serif; }
+
+    .rp-card { background: #fff; border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+    .rp-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; margin: 0 0 0.3rem 0; }
+    .rp-sub   { color: #64748b; font-size: 0.875rem; margin: 0 0 2rem 0; }
+
+    .rp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+
+    .rp-stat {
+        border-radius: 12px; padding: 1.5rem; color: #fff; position: relative; overflow: hidden;
+    }
+    .rp-stat::before {
+        content: ''; position: absolute; top: -20px; right: -20px;
+        width: 80px; height: 80px; background: rgba(255,255,255,0.08); border-radius: 50%;
+    }
+    .rp-stat-blue   { background: linear-gradient(135deg, #4f46e5, #4338ca); box-shadow: 0 4px 16px rgba(79,70,229,0.25); }
+    .rp-stat-green  { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 16px rgba(16,185,129,0.25); }
+    .rp-stat-amber  { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 16px rgba(245,158,11,0.25); }
+    .rp-stat-purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 4px 16px rgba(124,58,237,0.25); }
+
+    .rp-stat-val   { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 0.2rem 0; }
+    .rp-stat-label { font-size: 0.78rem; opacity: 0.85; font-weight: 500; margin: 0; }
+
+    .rp-section-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 1.25rem 0; letter-spacing: -0.02em; }
+
+    .rp-table { width: 100%; border-collapse: collapse; }
+    .rp-table th {
+        background: #f8fafc; padding: 0.875rem 1rem; text-align: left;
+        font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.06em; color: #64748b; border-bottom: 2px solid #e2e8f0;
+    }
+    .rp-table td { padding: 0.875rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: #1e293b; }
+    .rp-table tr:hover td { background: #f8fafc; }
+    .rp-table tr:last-child td { border-bottom: none; }
+
+    .rp-prog { display: flex; align-items: center; gap: 0.5rem; }
+    .rp-prog-bar { width: 80px; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .rp-prog-fill { height: 100%; background: #4f46e5; border-radius: 3px; }
+
+    .rp-badge {
+        display: inline-flex; align-items: center; padding: 0.2rem 0.65rem;
+        border-radius: 999px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .rp-badge-green  { background: #d1fae5; color: #065f46; }
+    .rp-badge-amber  { background: #fef3c7; color: #92400e; }
+    .rp-badge-red    { background: #fee2e2; color: #991b1b; }
+
+    .rp-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+    .rp-insight { background: #f8fafc; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0; }
+    .rp-insight h4 { font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.75rem 0; }
+    .rp-insight-val { font-size: 1.25rem; font-weight: 800; color: #4f46e5; margin: 0 0 0.25rem 0; letter-spacing: -0.02em; }
+    .rp-insight-sub { font-size: 0.8rem; color: #64748b; margin: 0; }
+
+    .rp-empty { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1rem 1.25rem; color: #065f46; font-size: 0.875rem; font-weight: 500; }
+
+    .rp-denied { background: #fee2e2; border: 1px solid #fecaca; border-radius: 10px; padding: 1.25rem; color: #991b1b; }
+    .rp-denied h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem 0; }
+    .rp-denied p  { margin: 0; font-size: 0.875rem; }
+</style>
+
+@if (!AuthService.EhAdmin())
+{
+    <div class="rp-wrap">
+        <div class="rp-denied">
+            <h2>⛔ Acesso Negado</h2>
+            <p>Apenas administradores podem visualizar relatórios.</p>
+        </div>
+    </div>
+    return;
+}
+
+<div class="rp-wrap">
+    <div class="rp-card">
+        <h1 class="rp-title">📊 Relatórios de Vendas</h1>
+        <p class="rp-sub">Acompanhe o desempenho dos seus eventos em tempo real</p>
+
+        <div class="rp-stats">
+            <div class="rp-stat rp-stat-blue">
+                <p class="rp-stat-val">@relatorio.TotalIngressosVendidos</p>
+                <p class="rp-stat-label">Ingressos Vendidos</p>
+            </div>
+            <div class="rp-stat rp-stat-green">
+                <p class="rp-stat-val">@relatorio.ReceitaTotal.ToString("C2")</p>
+                <p class="rp-stat-label">Receita Total</p>
+            </div>
+            <div class="rp-stat rp-stat-amber">
+                <p class="rp-stat-val">@relatorio.EventosAtivos</p>
+                <p class="rp-stat-label">Eventos Ativos</p>
+            </div>
+            <div class="rp-stat rp-stat-purple">
+                <p class="rp-stat-val">@relatorio.TicketMedio.ToString("C2")</p>
+                <p class="rp-stat-label">Ticket Médio</p>
+            </div>
+        </div>
+
+        <h2 class="rp-section-title">Vendas por Evento</h2>
+
+        @if (relatorio.VendasPorEvento.Any())
+        {
+            <table class="rp-table">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Vendidos</th>
+                        <th>Capacidade</th>
+                        <th>Ocupação</th>
+                        <th>Receita</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in relatorio.VendasPorEvento)
+                    {
+                        <tr>
+                            <td><strong>@v.NomeEvento</strong></td>
+                            <td>@v.IngressosVendidos</td>
+                            <td>@v.CapacidadeTotal</td>
+                            <td>
+                                <div class="rp-prog">
+                                    <div class="rp-prog-bar">
+                                        <div class="rp-prog-fill" style="width:@Math.Min(v.Ocupacao,100).ToString("F0")%"></div>
+                                    </div>
+                                    <span>@v.Ocupacao.ToString("F1")%</span>
+                                </div>
+                            </td>
+                            <td><strong>@v.Receita.ToString("C2")</strong></td>
+                            <td>
+                                @if (v.Ocupacao >= 100)
+                                { <span class="rp-badge rp-badge-red">Esgotado</span> }
+                                else if (v.Ocupacao >= 80)
+                                { <span class="rp-badge rp-badge-amber">Quase Esgotado</span> }
+                                else if (v.Ocupacao >= 50)
+                                { <span class="rp-badge rp-badge-amber">Vendendo Bem</span> }
+                                else
+                                { <span class="rp-badge rp-badge-green">Disponível</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="rp-empty">Nenhuma venda registrada ainda. Comece vendendo ingressos!</div>
+        }
+    </div>
+
+    @if (relatorio.VendasPorEvento.Any())
+    {
+        <div class="rp-card">
+            <h2 class="rp-section-title">📈 Insights</h2>
+            <div class="rp-insights">
+                <div class="rp-insight">
+                    <h4>🏆 Evento Mais Vendido</h4>
+                    <p class="rp-insight-val">@eventoMaisVendido?.NomeEvento</p>
+                    <p class="rp-insight-sub">@eventoMaisVendido?.IngressosVendidos ingressos — @eventoMaisVendido?.Ocupacao.ToString("F1")% de ocupação</p>
+                </div>
+                <div class="rp-insight">
+                    <h4>💰 Maior Receita</h4>
+                    <p class="rp-insight-val" style="color:#10b981">@eventoMaiorReceita?.NomeEvento</p>
+                    <p class="rp-insight-sub">@eventoMaiorReceita?.Receita.ToString("C2") — @eventoMaiorReceita?.IngressosVendidos ingressos</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private RelatorioVendas relatorio = new();
+    private VendaPorEvento? eventoMaisVendido;
+    private VendaPorEvento? eventoMaiorReceita;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarRelatorioAsync();
+        EventoService.OnEstadoAlterado += AtualizarRelatorio;
+    }
+
+    private void AtualizarRelatorio() => InvokeAsync(async () => { await CarregarRelatorioAsync(); StateHasChanged(); });
+
+    private async Task CarregarRelatorioAsync()
+    {
+        relatorio = await EventoService.ObterRelatorioAsync();
+        eventoMaisVendido  = relatorio.VendasPorEvento.OrderByDescending(v => v.IngressosVendidos).FirstOrDefault();
+        eventoMaiorReceita = relatorio.VendasPorEvento.OrderByDescending(v => v.Receita).FirstOrDefault();
+    }
+
+    public void Dispose() => EventoService.OnEstadoAlterado -= AtualizarRelatorio;
+}

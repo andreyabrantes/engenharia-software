@@ -1,0 +1,419 @@
+@page "/login"
+@using BilheteriaVirtualBlazor.Services
+@using BilheteriaVirtualBlazor.Models
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Login - Bilheteria Virtual</PageTitle>
+
+<style>
+    html, body, #app { margin: 0; padding: 0; height: 100%; }
+
+    .lp-wrap {
+        display: flex;
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ── LADO ESQUERDO ── */
+    .lp-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 4rem 3.5rem;
+        background: #0d0b1e;
+        background-image:
+            radial-gradient(ellipse 70% 60% at 10% 10%, rgba(79,70,229,0.25) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 40% at 90% 90%, rgba(124,58,237,0.18) 0%, transparent 60%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .lp-left::before {
+        content: '';
+        position: absolute;
+        top: -80px; left: -80px;
+        width: 320px; height: 320px;
+        background: radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .lp-brand { position: relative; z-index: 1; }
+
+    .lp-logo {
+        font-size: 3.5rem;
+        display: block;
+        margin-bottom: 1.5rem;
+        filter: drop-shadow(0 0 24px rgba(99,102,241,0.7));
+    }
+
+    .lp-divider {
+        width: 40px; height: 3px;
+        background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        border-radius: 2px;
+        margin-bottom: 1.5rem;
+    }
+
+    .lp-title {
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+        margin: 0 0 1rem 0;
+    }
+
+    .lp-title span {
+        background: linear-gradient(135deg, #818cf8, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .lp-desc {
+        color: rgba(255,255,255,0.45);
+        font-size: 0.9rem;
+        line-height: 1.75;
+        max-width: 320px;
+        margin: 0 0 2.5rem 0;
+    }
+
+    .lp-features { display: flex; flex-direction: column; gap: 1rem; }
+
+    .lp-feature {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        color: rgba(255,255,255,0.6);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .lp-feat-icon {
+        width: 34px; height: 34px;
+        background: rgba(79,70,229,0.2);
+        border: 1px solid rgba(99,102,241,0.35);
+        border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    /* ── LADO DIREITO ── */
+    .lp-right {
+        width: 480px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #f1f5f9;
+    }
+
+    .lp-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+    }
+
+    .lp-card-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.3rem 0;
+    }
+
+    .lp-card-sub {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin: 0 0 1.75rem 0;
+    }
+
+    /* Abas */
+    .lp-tabs {
+        display: flex;
+        gap: 0.25rem;
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 0.3rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .lp-tab {
+        flex: 1;
+        padding: 0.5rem 0.2rem;
+        border: none;
+        border-radius: 7px;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s;
+        font-family: inherit;
+        white-space: nowrap;
+    }
+
+    .lp-tab.on {
+        background: #fff;
+        color: #4f46e5;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .lp-tab:hover:not(.on) { color: #4f46e5; }
+
+    /* Campos */
+    .lp-group { margin-bottom: 1rem; }
+
+    .lp-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.35rem;
+    }
+
+    .lp-input {
+        width: 100%;
+        padding: 0.65rem 0.875rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-family: inherit;
+        background: #fff;
+        color: #0f172a;
+        outline: none;
+        transition: border-color 0.18s, box-shadow 0.18s;
+        box-sizing: border-box;
+    }
+
+    .lp-input:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+    }
+
+    .lp-input::placeholder { color: #94a3b8; }
+
+    /* Botões */
+    .lp-btn {
+        width: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 9px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.18s;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .lp-btn-blue {
+        background: #4f46e5;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+    }
+
+    .lp-btn-blue:hover:not(:disabled) {
+        background: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(79,70,229,0.4);
+    }
+
+    .lp-btn-purple {
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(124,58,237,0.3);
+    }
+
+    .lp-btn-purple:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(124,58,237,0.4);
+    }
+
+    .lp-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+
+    /* Alertas */
+    .lp-err {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left: 4px solid #ef4444;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.25rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+    }
+
+    .lp-ok {
+        background: #d1fae5;
+        color: #065f46;
+        border-left: 4px solid #10b981;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.25rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+    }
+
+    /* Mobile */
+    @@media (max-width: 768px) {
+        .lp-left  { display: none; }
+        .lp-right { width: 100%; background: #0d0b1e; }
+        .lp-card  { background: #1a1730; border-color: rgba(255,255,255,0.08); box-shadow: none; }
+        .lp-card-title { color: #f1f5f9; }
+        .lp-card-sub   { color: rgba(255,255,255,0.5); }
+        .lp-label      { color: rgba(255,255,255,0.7); }
+        .lp-input      { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #f1f5f9; }
+        .lp-tabs       { background: rgba(255,255,255,0.06); }
+        .lp-tab.on     { background: rgba(255,255,255,0.12); }
+    }
+</style>
+
+<div class="lp-wrap">
+
+    <!-- Esquerdo: branding -->
+    <div class="lp-left">
+        <div class="lp-brand">
+            <span class="lp-logo">🎫</span>
+            <div class="lp-divider"></div>
+            <h1 class="lp-title">Bilheteria<br/><span>Virtual</span></h1>
+            <p class="lp-desc">Plataforma completa para compra e gestão de ingressos digitais com segurança e praticidade.</p>
+            <div class="lp-features">
+                <div class="lp-feature"><div class="lp-feat-icon">🎟️</div><span>Ingressos digitais com QR Code único</span></div>
+                <div class="lp-feature"><div class="lp-feat-icon">💳</div><span>PIX, Cartão, Boleto e Dinheiro</span></div>
+                <div class="lp-feature"><div class="lp-feat-icon">📊</div><span>Relatórios de vendas em tempo real</span></div>
+                <div class="lp-feature"><div class="lp-feat-icon">📧</div><span>Comprovante enviado por e-mail</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Direito: formulário -->
+    <div class="lp-right">
+        <div class="lp-card">
+
+            <h2 class="lp-card-title">
+                @if (aba == "login")   { <span>Bem-vindo de volta</span> }
+                @if (aba == "cliente") { <span>Criar conta</span> }
+                @if (aba == "admin")   { <span>Conta Organizador</span> }
+            </h2>
+            <p class="lp-card-sub">
+                @if (aba == "login")   { <span>Acesse sua conta para continuar</span> }
+                @if (aba == "cliente") { <span>Cadastre-se para comprar ingressos</span> }
+                @if (aba == "admin")   { <span>Cadastro de organizador de eventos</span> }
+            </p>
+
+            <div class="lp-tabs">
+                <button class="lp-tab @(aba=="login"   ?"on":"")" @onclick='()=>MudarAba("login")'>Entrar</button>
+                <button class="lp-tab @(aba=="cliente" ?"on":"")" @onclick='()=>MudarAba("cliente")'>Cadastro Cliente</button>
+                <button class="lp-tab @(aba=="admin"   ?"on":"")" @onclick='()=>MudarAba("admin")'>Cadastro Admin</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(mensagem))
+            {
+                <div class="@(sucesso ? "lp-ok" : "lp-err")">@mensagem</div>
+            }
+
+            @if (aba == "login")
+            {
+                <div class="lp-group">
+                    <label class="lp-label">E-mail</label>
+                    <input type="email" class="lp-input" @bind="email" @bind:event="oninput" placeholder="seu@email.com" @onkeydown="HandleKeyDown" />
+                </div>
+                <div class="lp-group">
+                    <label class="lp-label">Senha</label>
+                    <input type="password" class="lp-input" @bind="senha" @bind:event="oninput" placeholder="Digite sua senha" @onkeydown="HandleKeyDown" />
+                </div>
+                <button class="lp-btn lp-btn-blue" @onclick="RealizarLogin" disabled="@carregando">
+                    @if (carregando) { <span>⏳ Entrando...</span> } else { <span>Entrar →</span> }
+                </button>
+            }
+
+            @if (aba == "cliente")
+            {
+                <div class="lp-group"><label class="lp-label">Nome completo</label><input type="text"     class="lp-input" @bind="regNome"     placeholder="Seu nome completo" /></div>
+                <div class="lp-group"><label class="lp-label">E-mail</label>        <input type="email"    class="lp-input" @bind="regEmail"    placeholder="seu@email.com" /></div>
+                <div class="lp-group"><label class="lp-label">CPF</label>           <input type="text"     class="lp-input" @bind="regCpf"      placeholder="00000000000" maxlength="11" /></div>
+                <div class="lp-group"><label class="lp-label">Senha</label>         <input type="password" class="lp-input" @bind="regSenha"    placeholder="Mínimo 6 caracteres" /></div>
+                <div class="lp-group"><label class="lp-label">Confirmar senha</label><input type="password" class="lp-input" @bind="regConfirmar" placeholder="Repita a senha" /></div>
+                <button class="lp-btn lp-btn-blue" @onclick='()=>Registrar("Cliente")' disabled="@carregando">
+                    @if (carregando) { <span>⏳ Cadastrando...</span> } else { <span>Criar conta →</span> }
+                </button>
+            }
+
+            @if (aba == "admin")
+            {
+                <div class="lp-group"><label class="lp-label">Nome completo</label> <input type="text"     class="lp-input" @bind="regNome"     placeholder="Seu nome completo" /></div>
+                <div class="lp-group"><label class="lp-label">E-mail</label>         <input type="email"    class="lp-input" @bind="regEmail"    placeholder="seu@email.com" /></div>
+                <div class="lp-group"><label class="lp-label">CPF</label>            <input type="text"     class="lp-input" @bind="regCpf"      placeholder="00000000000" maxlength="11" /></div>
+                <div class="lp-group"><label class="lp-label">Senha</label>          <input type="password" class="lp-input" @bind="regSenha"    placeholder="Mínimo 6 caracteres" /></div>
+                <div class="lp-group"><label class="lp-label">Confirmar senha</label><input type="password" class="lp-input" @bind="regConfirmar" placeholder="Repita a senha" /></div>
+                <button class="lp-btn lp-btn-purple" @onclick='()=>Registrar("Admin")' disabled="@carregando">
+                    @if (carregando) { <span>⏳ Cadastrando...</span> } else { <span>Criar conta Admin →</span> }
+                </button>
+            }
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private string aba = "login";
+    private string email = "", senha = "";
+    private string regNome = "", regEmail = "", regCpf = "", regSenha = "", regConfirmar = "";
+    private string mensagem = "";
+    private bool sucesso = false, carregando = false;
+
+    protected override void OnInitialized()
+    {
+        if (AuthService.EstaAutenticado()) Navigation.NavigateTo("/");
+    }
+
+    private void MudarAba(string a) { aba = a; mensagem = ""; regNome = regEmail = regCpf = regSenha = regConfirmar = ""; }
+
+    private async Task RealizarLogin()
+    {
+        mensagem = "";
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha)) { mensagem = "Preencha e-mail e senha."; return; }
+        carregando = true;
+        try
+        {
+            if (await AuthService.LoginAsync(email, senha)) Navigation.NavigateTo("/");
+            else mensagem = "E-mail ou senha incorretos.";
+        }
+        catch { mensagem = "Erro de conexão com o servidor."; }
+        finally { carregando = false; }
+    }
+
+    private async Task Registrar(string tipo)
+    {
+        mensagem = "";
+        if (string.IsNullOrWhiteSpace(regNome) || string.IsNullOrWhiteSpace(regEmail) ||
+            string.IsNullOrWhiteSpace(regCpf)  || string.IsNullOrWhiteSpace(regSenha))
+        { mensagem = "Preencha todos os campos."; return; }
+        if (regSenha != regConfirmar) { mensagem = "As senhas não coincidem."; return; }
+        if (regSenha.Length < 6)      { mensagem = "A senha deve ter no mínimo 6 caracteres."; return; }
+        carregando = true;
+        try
+        {
+            var (ok, erro) = await AuthService.RegisterAsync(regNome, regEmail, regCpf, regSenha, tipo);
+            if (ok) { sucesso = true; mensagem = "Conta criada! Faça login."; email = regEmail; MudarAba("login"); }
+            else    { sucesso = false; mensagem = erro; }
+        }
+        catch { mensagem = "Erro de conexão com o servidor."; }
+        finally { carregando = false; }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await RealizarLogin(); }
+}

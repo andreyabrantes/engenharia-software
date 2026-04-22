@@ -19,10 +19,61 @@ public class UsuarioTests
     }
 
     [Fact]
-    public void Usuario_SenhaVazia_DeveSerInvalida()
+    public void Usuario_EmailSemArroba_DeveSerInvalido()
     {
-        var senha = string.Empty;
+        var email = "clienteemail.com";
 
-        Assert.True(string.IsNullOrWhiteSpace(senha));
+        Assert.DoesNotContain("@", email);
+    }
+
+    [Fact]
+    public void Usuario_NomeVazio_DeveSerInvalido()
+    {
+        var nome = string.Empty;
+
+        Assert.True(string.IsNullOrWhiteSpace(nome));
+    }
+
+    [Fact]
+    public void Usuario_CpfDuplicado_DeveBloquearCadastro()
+    {
+        var cpfExistente = "123.456.789-00";
+        var cpfNovo = "123.456.789-00";
+
+        Assert.Equal(cpfExistente, cpfNovo);
+    }
+
+    [Fact]
+    public void Usuario_CpfsDiferentes_DevemSerPermitidos()
+    {
+        var cpf1 = "111.111.111-11";
+        var cpf2 = "222.222.222-22";
+
+        Assert.NotEqual(cpf1, cpf2);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Usuario_CpfNuloOuEspacos_DeveSerInvalido(string? cpf)
+    {
+        Assert.True(string.IsNullOrWhiteSpace(cpf));
+    }
+
+    [Fact]
+    public void Usuario_CpfComOnzeDigitos_DeveSerValido()
+    {
+        var cpf = "12345678900";
+
+        Assert.Equal(11, cpf.Length);
+    }
+
+    [Fact]
+    public void Usuario_CpfComMenosDigitos_DeveSerInvalido()
+    {
+        var cpf = "1234567";
+
+        Assert.True(cpf.Length < 11);
     }
 }

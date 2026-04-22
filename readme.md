@@ -140,7 +140,7 @@ Então o sistema deve exibir o total de ingressos vendidos, receita total e ocup
 
 - **Minimal API** — .NET 9.0 / C# 13
 - **Dapper** — acesso ao banco com parâmetros `@` (sem ORM)
-- **SQLite** — banco de dados relacional
+- **SQL** — banco de dados relacional
 - **xUnit** — testes automatizados
 - **Blazor WebAssembly** — frontend SPA em C#
 - **CSS3** — design system próprio com variáveis e responsividade

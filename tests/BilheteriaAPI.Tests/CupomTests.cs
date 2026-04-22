@@ -2,26 +2,62 @@ namespace BilheteriaAPI.Tests;
 
 public class CupomTests
 {
+    // ── Validação de Código ───────────────────────────────────────────────────
+
     [Fact]
-    public void Cupom_ComDescontoValido_DeveAplicarDesconto()
+    public void Cupom_CodigoVazio_DeveSerRejeitado()
     {
-        var valorCompra = 100m;
-        var porcentagem = 10m;
-        var valorMinimo = 50m;
+        var codigo = string.Empty;
+        Assert.True(string.IsNullOrWhiteSpace(codigo));
+    }
 
-        var resultado = valorCompra >= valorMinimo
-            ? valorCompra - (valorCompra * porcentagem / 100)
-            : valorCompra;
-
-        Assert.Equal(90m, resultado);
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Cupom_CodigoNuloOuEspacos_DeveSerRejeitado(string? codigo)
+    {
+        Assert.True(string.IsNullOrWhiteSpace(codigo));
     }
 
     [Fact]
-    public void Cupom_AbaixoDoValorMinimo_NaoDeveAplicarDesconto()
+    public void Cupom_CodigoPreenchido_DeveSerAceito()
     {
-        var valorCompra = 30m;
-        var porcentagem = 10m;
-        var valorMinimo = 50m;
+        var codigo = "PROMO10";
+        Assert.False(string.IsNullOrWhiteSpace(codigo));
+    }
+
+    // ── Validação de Desconto ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Cupom_DescontoZero_DeveSerRejeitado()
+    {
+        var desconto = 0m;
+        Assert.True(desconto <= 0);
+    }
+
+    [Fact]
+    public void Cupom_DescontoNegativo_DeveSerRejeitado()
+    {
+        var desconto = -10m;
+        Assert.True(desconto <= 0);
+    }
+
+    [Fact]
+    public void Cupom_DescontoPositivo_DeveSerAceito()
+    {
+        var desconto = 20m;
+        Assert.True(desconto > 0);
+    }
+
+    // ── Regra de Negócio: Valor Mínimo ───────────────────────────────────────
+
+    [Fact]
+    public void Cupom_CompraAbaixoDoValorMinimo_NaoDeveAplicarDesconto()
+    {
+        var valorCompra  = 30m;
+        var valorMinimo  = 50m;
+        var porcentagem  = 10m;
 
         var resultado = valorCompra >= valorMinimo
             ? valorCompra - (valorCompra * porcentagem / 100)
@@ -31,49 +67,39 @@ public class CupomTests
     }
 
     [Fact]
-    public void Cupom_CodigoVazio_DeveSerInvalido()
+    public void Cupom_CompraAcimaDovalorMinimo_DeveAplicarDesconto()
     {
-        var codigo = string.Empty;
+        var valorCompra  = 100m;
+        var valorMinimo  = 50m;
+        var porcentagem  = 10m;
 
-        Assert.True(string.IsNullOrWhiteSpace(codigo));
+        var resultado = valorCompra >= valorMinimo
+            ? valorCompra - (valorCompra * porcentagem / 100)
+            : valorCompra;
+
+        Assert.Equal(90m, resultado);
     }
 
     [Fact]
-    public void Cupom_DescontoNegativo_DeveSerInvalido()
+    public void Cupom_CompraExatamenteNoValorMinimo_DeveAplicarDesconto()
     {
-        var desconto = -5m;
+        var valorCompra  = 50m;
+        var valorMinimo  = 50m;
+        var porcentagem  = 20m;
 
-        Assert.True(desconto <= 0);
+        var resultado = valorCompra >= valorMinimo
+            ? valorCompra - (valorCompra * porcentagem / 100)
+            : valorCompra;
+
+        Assert.Equal(40m, resultado);
     }
 
-    [Fact]
-    public void Cupom_DescontoZero_DeveSerInvalido()
-    {
-        var desconto = 0m;
-
-        Assert.True(desconto <= 0);
-    }
+    // ── Regra de Negócio: Proteção contra Valor Negativo (fraude) ────────────
 
     [Fact]
-    public void Cupom_DescontoPositivo_DeveSerValido()
+    public void Cupom_DescontoDe100Porcento_NaoDeveGerarValorNegativo()
     {
-        var desconto = 20m;
-
-        Assert.True(desconto > 0);
-    }
-
-    [Fact]
-    public void Cupom_ValorMinimoNegativo_DeveSerInvalido()
-    {
-        var valorMinimo = -1m;
-
-        Assert.True(valorMinimo < 0);
-    }
-
-    [Fact]
-    public void Cupom_NaoDeveGerarValorFinalNegativo()
-    {
-        var valorCompra = 10m;
+        var valorCompra = 80m;
         var porcentagem = 100m;
 
         var valorFinal = valorCompra - (valorCompra * porcentagem / 100);
@@ -81,11 +107,42 @@ public class CupomTests
         Assert.True(valorFinal >= 0);
     }
 
+    [Fact]
+    public void Cupom_DescontoNaoDeveGerarValorAbaixoDeZero()
+    {
+        var valorCompra = 50m;
+        var porcentagem = 150m; // desconto inválido acima de 100%
+
+        var valorFinal = valorCompra - (valorCompra * porcentagem / 100);
+        var valorProtegido = Math.Max(0, valorFinal);
+
+        Assert.True(valorProtegido >= 0);
+    }
+
+    // ── Regra de Negócio: Expiração ───────────────────────────────────────────
+
+    [Fact]
+    public void Cupom_DataExpiracaoNoPassado_DeveSerRejeitado()
+    {
+        var dataExpiracao = DateTime.UtcNow.AddDays(-1);
+        Assert.True(dataExpiracao < DateTime.UtcNow);
+    }
+
+    [Fact]
+    public void Cupom_DataExpiracaoNoFuturo_DeveSerAceito()
+    {
+        var dataExpiracao = DateTime.UtcNow.AddDays(30);
+        Assert.True(dataExpiracao > DateTime.UtcNow);
+    }
+
+    // ── Cálculo Parametrizado ─────────────────────────────────────────────────
+
     [Theory]
-    [InlineData(100, 10, 50, 90)]
-    [InlineData(200, 20, 100, 160)]
-    [InlineData(50,  5,  30,  47.5)]
-    public void Cupom_CalculoDesconto_DeveSerCorreto(
+    [InlineData(100,  10,  50,  90)]
+    [InlineData(200,  20, 100, 160)]
+    [InlineData(50,   5,  30,  47.5)]
+    [InlineData(80,  25,  80,  60)]
+    public void Cupom_CalculoDesconto_DeveRetornarValorCorreto(
         decimal valorCompra, decimal porcentagem, decimal valorMinimo, decimal esperado)
     {
         var resultado = valorCompra >= valorMinimo

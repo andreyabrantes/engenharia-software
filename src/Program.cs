@@ -36,12 +36,12 @@ using (var conn = new SqliteConnection(connStr))
             Tipo      TEXT NOT NULL DEFAULT 'Cliente'
         );
         CREATE TABLE IF NOT EXISTS Eventos (
-            Id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            Nome      TEXT NOT NULL,
-            Descricao TEXT NOT NULL DEFAULT '',
-            Data      TEXT NOT NULL,
-            Local     TEXT NOT NULL DEFAULT '',
-            ImagemUrl TEXT NOT NULL DEFAULT '🎉'
+            Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            Nome        TEXT NOT NULL,
+            Descricao   TEXT NOT NULL DEFAULT '',
+            DataEvento  TEXT NOT NULL,
+            Local       TEXT NOT NULL DEFAULT '',
+            ImagemUrl   TEXT NOT NULL DEFAULT '🎉'
         );
         CREATE TABLE IF NOT EXISTS Setores (
             Id                   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,11 +81,11 @@ using (var conn = new SqliteConnection(connStr))
 
     // Seed eventos iniciais
     conn.Execute(@"
-        INSERT OR IGNORE INTO Eventos (Id, Nome, Descricao, Data, Local, ImagemUrl)
+        INSERT OR IGNORE INTO Eventos (Id, Nome, Descricao, DataEvento, Local, ImagemUrl)
         VALUES (1, 'Show de Rock 2026', 'O maior show de rock do ano com bandas internacionais!', '2026-08-15T20:00:00', 'Arena Unifeso', 'images/rock.jpg');
-        INSERT OR IGNORE INTO Eventos (Id, Nome, Descricao, Data, Local, ImagemUrl)
+        INSERT OR IGNORE INTO Eventos (Id, Nome, Descricao, DataEvento, Local, ImagemUrl)
         VALUES (2, 'Festival de Música Eletrônica', 'Uma noite inesquecível com os melhores DJs do mundo', '2026-09-05T22:00:00', 'Clube Teresópolis', 'images/eletronico.jpg');
-        INSERT OR IGNORE INTO Eventos (Id, Nome, Descricao, Data, Local, ImagemUrl)
+        INSERT OR IGNORE INTO Eventos (Id, Nome, Descricao, DataEvento, Local, ImagemUrl)
         VALUES (3, 'Teatro: A Comédia dos Erros', 'Peça clássica de Shakespeare com elenco renomado', '2026-07-20T19:00:00', 'Teatro Municipal', 'images/teatro.jpg');
     ");
 

@@ -58,7 +58,7 @@ public class IngressoService(IConfiguration config, EmailService emailService)
 
         // Busca evento e setor
         var evento = await conn.QueryFirstOrDefaultAsync<dynamic>(
-            "SELECT Id, Nome, Local, Data, ImagemUrl FROM Eventos WHERE Id = @Id",
+            "SELECT Id, Nome, Local, DataEvento AS Data, ImagemUrl FROM Eventos WHERE Id = @Id",
             new { Id = request.EventoId });
         if (evento is null)
             return new CompraResultado { Sucesso = false, Mensagem = "Evento não encontrado." };
@@ -143,7 +143,7 @@ public class IngressoService(IConfiguration config, EmailService emailService)
             @"SELECT i.Id, i.CodigoUnico, i.Status, i.DataCompra,
                      a.Numero AS AssentoNumero,
                      s.Id AS SetorId, s.Nome AS SetorNome, s.Preco,
-                     e.Id AS EventoId, e.Nome AS EventoNome, e.Local AS EventoLocal, e.Data AS EventoData
+                     e.Id AS EventoId, e.Nome AS EventoNome, e.Local AS EventoLocal, e.DataEvento AS EventoData
               FROM Ingressos i
               JOIN Assentos a ON a.Id = i.AssentoId
               JOIN Setores s ON s.Id = a.SetorId

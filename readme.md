@@ -1,6 +1,6 @@
-# 🎟️ Sistema de Bilheteria Virtual
+# 🎟️ TicketPrime — Sistema de Bilheteria Virtual
 
-Plataforma de comercialização e gestão de ingressos online desenvolvida com **Blazor WebAssembly** e C#, como projeto da disciplina de Engenharia de Software — 5° Período de Ciência da Computação, Unifeso.
+Plataforma de comercialização e gestão de ingressos desenvolvida com **Blazor WebAssembly** e **Minimal API C#**, como projeto da disciplina de Engenharia de Software — 5° Período de Ciência da Computação, Unifeso.
 
 ## 👥 Equipe
 
@@ -22,23 +22,23 @@ Plataforma de comercialização e gestão de ingressos online desenvolvida com *
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 
-### API (Backend)
+### 1. Clone o repositório
 
 ```bash
-# 1. Clone o repositório
 git clone https://github.com/andreyabrantes/engenharia-software.git
 cd engenharia-software
+```
 
-# 2. Entre na pasta da API
+### 2. Execute a API (Backend)
+
+```bash
 cd src
-
-# 3. Execute
 dotnet run
 ```
 
 Swagger disponível em: **http://localhost:5047/swagger**
 
-### Frontend (Blazor)
+### 3. Execute o Frontend (Blazor)
 
 ```bash
 cd BilheteriaVirtualBlazor
@@ -47,82 +47,59 @@ dotnet run
 
 Acesse no navegador: **http://localhost:5000**
 
-Para desenvolvimento com hot reload:
+### 4. Execute os Testes
 
 ```bash
-dotnet watch
+cd tests/BilheteriaAPI.Tests
+dotnet test
 ```
 
 ### Comandos úteis
 
 ```bash
-dotnet build        # Compilar
-dotnet clean        # Limpar build
-dotnet publish -c Release  # Publicar para produção
+dotnet build              # Compilar
+dotnet clean              # Limpar build
+dotnet publish -c Release # Publicar para produção
 ```
 
 ---
 
 ## 🔐 Contas de Teste
 
-| Tipo | E-mail |
-|---|---|
-| Administrador | admin@bilheteria.com | admin123
-| Cliente | cliente@email.com | cliente123
+| Tipo | E-mail | Senha |
+|---|---|---|
+| Administrador | admin@bilheteria.com | admin123 |
+| Cliente | cliente@email.com | cliente123 |
 
 ---
 
 ## 📁 Estrutura do Projeto
 
 ```
-engenharia-software-3/
-├── src/                            # API (Minimal API + EF Core)
-│   ├── Controllers/                # Controllers auxiliares
-│   ├── Data/                       # AppDbContext
-│   ├── Models/                     # Modelos de dados
-│   ├── Repositories/               # Repositórios
-│   ├── Services/                   # Serviços de negócio
-│   └── Program.cs
-├── BilheteriaVirtualBlazor/        # Frontend Blazor WebAssembly
-├── db/                             # Scripts SQL
-├── docs/                           # Documentação
-└── tests/                          # Testes xUnit
+engenharia-software/
+├── src/          # Minimal API em C# com Dapper
+├── db/           # Scripts SQL (CREATE TABLE)
+├── docs/         # Requisitos, arquitetura e operação
+├── tests/        # Testes automatizados xUnit
+└── BilheteriaVirtualBlazor/  # Frontend Blazor WebAssembly
 ```
-
----
-
-## 📋 Histórias de Usuário Implementadas
-
-| ID | Papel | Descrição | Status |
-|---|---|---|---|
-| US-01 | Cliente | Como cliente, eu quero poder comprar ingressos escolhendo setor e assento para minha comodidade | ✅ |
-| US-02 | Cliente | Como cliente, eu quero poder receber meu ingresso de forma digital por e-mail | ✅ |
-| US-03 | Organizador | Como organizador, eu quero poder cadastrar eventos, editando setores e preços | ✅ |
-| US-04 | Organizador | Como organizador, eu quero acompanhar meus relatórios de vendas por evento para melhor controle | ✅ |
-
-## ✅ Critérios de Aceitação
-
-| ID | Papel | Critério |
-|---|---|---|
-| US-01 | Cliente | Recurso de comprar ingresso, escolha de setor e assento implementadas na aba COMPRAR |
-| US-02 | Cliente | Recebimento através do e-mail cadastrado no ato da compra (QR-Code e Código único) |
-| US-03 | Organizador | Cadastro de eventos, setor e preços na aba "Cadastrar Eventos" quando está logado como ADMIN |
-| US-04 | Organizador | Possibilidade de visualizar e acompanhar o relatório de vendas pelo recurso Relatórios, quando logado como ADMIN |
 
 ---
 
 ## ⚙️ Tecnologias
 
-- **Blazor WebAssembly** — SPA com C# no frontend
-- **.NET 9.0 / C# 13**
-- **CSS3** — Design system próprio com variáveis, gradientes e responsividade
-- **Dependency Injection** nativa do .NET
+- **Minimal API** — .NET 9.0 / C# 13
+- **Dapper** — acesso ao banco com parâmetros `@` (sem ORM)
+- **SQLite** — banco de dados relacional
+- **xUnit** — testes automatizados
+- **Blazor WebAssembly** — frontend SPA em C#
+- **CSS3** — design system próprio com variáveis e responsividade
 
 ---
 
 ## 🔄 Metodologia
 
-Modelo **Incremental e Iterativo (Scrum/Ágil)**, com entregas por Sprint para validação antecipada e mitigação de riscos como race condition em reservas simultâneas.
+Modelo **Incremental e Iterativo (Scrum/Ágil)**, com entregas por Sprint para validação antecipada e mitigação de riscos.
 
 Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
 
@@ -132,12 +109,6 @@ Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
 
 | Risco | Mitigação |
 |---|---|
-| Race condition (dois usuários no mesmo assento) | Validação de disponibilidade no serviço antes de confirmar |
-| Falha no envio de e-mail | Simulação com fallback visual de confirmação |
-| Fraude de ingresso | Código único por compra |
-
----
-
-## 🗺️ Próximos Passos
-
-- [ ] Banco de dados SQL
+| Race condition em reservas simultâneas | Validação de disponibilidade no serviço antes de confirmar |
+| Fraude com cupons negativos | Validação de valor mínimo e desconto positivo |
+| CPF duplicado (cambistas) | Retorno 400 com verificação via `WHERE Cpf = @Cpf` |

@@ -24,8 +24,18 @@ public class EventoRepository(AppDbContext db) : IEventoRepository
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var evento = await db.Eventos.FindAsync(id);
+        var evento = await db.Eventos
+            .Include(e => e.Setores).ThenInclude(s => s.Assentos)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (evento is null) return false;
+
+        var assentoIds = evento.Setores.SelectMany(s => s.Assentos).Select(a => a.Id).ToList();
+        if (assentoIds.Any())
+        {
+            var ingressos = await db.Ingressos.Where(i => assentoIds.Contains(i.AssentoId)).ToListAsync();
+            db.Ingressos.RemoveRange(ingressos);
+        }
+
         db.Eventos.Remove(evento);
         await db.SaveChangesAsync();
         return true;

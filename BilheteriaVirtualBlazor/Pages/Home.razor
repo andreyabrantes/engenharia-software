@@ -158,7 +158,7 @@
         <div class="hero-section" style="margin: -2rem -1.5rem 2.5rem; max-width: none;">
             @if (eventoDestaque.ImagemUrl.StartsWith("images/"))
             {
-                <img src="@eventoDestaque.ImagemUrl" alt="@eventoDestaque.Nome" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                <img src="http://localhost:5047/@eventoDestaque.ImagemUrl" alt="@eventoDestaque.Nome" style="width:100%;height:100%;object-fit:cover;display:block;" />
             }
             else
             {
@@ -253,7 +253,7 @@
                     <div class="ev-img">
                         @if (evento.ImagemUrl.StartsWith("images/"))
                         {
-                            <img src="@evento.ImagemUrl" alt="@evento.Nome" />
+                            <img src="http://localhost:5047/@evento.ImagemUrl" alt="@evento.Nome" />
                         }
                         else
                         {

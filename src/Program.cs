@@ -54,11 +54,9 @@ var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? 
 
 // ── AV1: Endpoints obrigatórios — Dapper com parâmetros @ ────────────────────
 
-app.MapGet("/api/eventos", async () =>
+app.MapGet("/api/eventos", async (EventoService eventoService) =>
 {
-    using var conn = new SqliteConnection(connStr);
-    var eventos = await conn.QueryAsync(
-        "SELECT Id, Nome, CapacidadeTotal, DataEvento, PrecoPadrao FROM Eventos");
+    var eventos = await eventoService.ListarTodosAsync();
     return Results.Ok(eventos);
 });
 
@@ -69,11 +67,11 @@ app.MapPost("/api/eventos", async (CriarEventoRequest req, EventoService eventoS
     if (req.Setores == null || req.Setores.Count == 0)
         return Results.BadRequest(new { erro = "Ao menos um setor é obrigatório." });
 
+    // Dapper: registra na tabela do professor com parâmetros @
     using var conn = new SqliteConnection(connStr);
-    var id = await conn.ExecuteScalarAsync<int>(
-        "INSERT INTO Eventos (Nome, CapacidadeTotal, DataEvento, PrecoPadrao) " +
-        "VALUES (@Nome, @CapacidadeTotal, @DataEvento, @PrecoPadrao); " +
-        "SELECT last_insert_rowid();",
+    await conn.ExecuteAsync(
+        "INSERT OR IGNORE INTO Eventos (Nome, CapacidadeTotal, DataEvento, PrecoPadrao) " +
+        "VALUES (@Nome, @CapacidadeTotal, @DataEvento, @PrecoPadrao)",
         new
         {
             Nome            = req.Nome,
@@ -82,7 +80,9 @@ app.MapPost("/api/eventos", async (CriarEventoRequest req, EventoService eventoS
             PrecoPadrao     = req.Setores.Min(s => s.Preco)
         });
 
-    return Results.Created($"/api/eventos/{id}", new { id, req.Nome });
+    // EF: cria evento completo com setores e assentos para o frontend funcionar
+    var evento = await eventoService.CriarAsync(req);
+    return Results.Created($"/api/eventos/{evento.Id}", evento);
 });
 
 app.MapPost("/api/cupons", async (CriarCupomRequest req) =>

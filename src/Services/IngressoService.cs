@@ -1,7 +1,6 @@
-using BilheteriaAPI.Data;
 using BilheteriaAPI.Models;
-using BilheteriaAPI.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
+using Microsoft.Data.Sqlite;
 
 namespace BilheteriaAPI.Services;
 
@@ -30,148 +29,147 @@ public class CompraResultado
     public DateTime DataCompra { get; set; }
 }
 
-public class IngressoService(IIngressoRepository ingressoRepo, AppDbContext db, EmailService emailService)
+public class IngressoService(IConfiguration config, EmailService emailService)
 {
     private static readonly object _lock = new();
+    private string ConnStr => config.GetConnectionString("DefaultConnection") ?? "Data Source=bilheteria.db";
 
     public async Task<CompraResultado> ComprarAsync(ComprarIngressoRequest request)
     {
-        // Busca ou cria usuário pelo email
-        var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
+        using var conn = new SqliteConnection(ConnStr);
+
+        // Busca ou cria usuário
+        var usuario = await conn.QueryFirstOrDefaultAsync<dynamic>(
+            "SELECT Id, Nome, Email FROM Usuarios WHERE Email = @Email",
+            new { Email = request.Email });
+
+        int usuarioId;
         if (usuario is null)
         {
-            usuario = new Usuario
-            {
-                Nome = request.NomeCliente,
-                Email = request.Email,
-                SenhaHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
-                Tipo = "Cliente"
-            };
-            db.Usuarios.Add(usuario);
-            await db.SaveChangesAsync();
+            var hash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
+            usuarioId = await conn.ExecuteScalarAsync<int>(
+                "INSERT INTO Usuarios (Nome, Email, Cpf, SenhaHash, Tipo) VALUES (@Nome, @Email, @Cpf, @Hash, 'Cliente'); SELECT last_insert_rowid();",
+                new { Nome = request.NomeCliente, Email = request.Email, Cpf = $"TEMP-{Guid.NewGuid():N}"[..14], Hash = hash });
+        }
+        else
+        {
+            usuarioId = (int)usuario.Id;
         }
 
-        var evento = await db.Eventos
-            .Include(e => e.Setores).ThenInclude(s => s.Assentos)
-            .FirstOrDefaultAsync(e => e.Id == request.EventoId);
-
+        // Busca evento e setor
+        var evento = await conn.QueryFirstOrDefaultAsync<dynamic>(
+            "SELECT Id, Nome, Local, Data, ImagemUrl FROM Eventos WHERE Id = @Id",
+            new { Id = request.EventoId });
         if (evento is null)
             return new CompraResultado { Sucesso = false, Mensagem = "Evento não encontrado." };
 
-        var setor = evento.Setores.FirstOrDefault(s => s.Id == request.SetorId);
+        var setor = await conn.QueryFirstOrDefaultAsync<dynamic>(
+            "SELECT Id, Nome, Preco, QuantidadeDisponivel FROM Setores WHERE Id = @Id AND EventoId = @EventoId",
+            new { Id = request.SetorId, EventoId = request.EventoId });
         if (setor is null)
             return new CompraResultado { Sucesso = false, Mensagem = "Setor não encontrado." };
 
-        List<Assento> assentos;
+        List<dynamic> assentos;
         lock (_lock)
         {
-            assentos = setor.Assentos
-                .Where(a => request.AssentoIds.Contains(a.Id))
-                .ToList();
+            var ids = string.Join(",", request.AssentoIds);
+            assentos = conn.Query<dynamic>(
+                $"SELECT Id, Numero, Status FROM Assentos WHERE Id IN ({ids}) AND SetorId = @SetorId",
+                new { SetorId = request.SetorId }).ToList();
 
             if (assentos.Count != request.AssentoIds.Count)
                 return new CompraResultado { Sucesso = false, Mensagem = "Um ou mais assentos não encontrados." };
 
-            var jaOcupados = assentos.Where(a => a.Status != StatusAssento.Disponivel).Select(a => a.Numero).ToList();
-            if (jaOcupados.Any())
-                return new CompraResultado { Sucesso = false, Mensagem = $"Assentos já ocupados: {string.Join(", ", jaOcupados)}" };
+            var ocupados = assentos.Where(a => (int)a.Status != 0).Select(a => (string)a.Numero).ToList();
+            if (ocupados.Any())
+                return new CompraResultado { Sucesso = false, Mensagem = $"Assentos já ocupados: {string.Join(", ", ocupados)}" };
 
             foreach (var a in assentos)
-                a.Status = StatusAssento.Ocupado;
+                conn.Execute("UPDATE Assentos SET Status = 2 WHERE Id = @Id", new { Id = (int)a.Id });
 
-            setor.QuantidadeDisponivel -= assentos.Count;
+            conn.Execute(
+                "UPDATE Setores SET QuantidadeDisponivel = QuantidadeDisponivel - @Qtd WHERE Id = @Id",
+                new { Qtd = assentos.Count, Id = request.SetorId });
         }
 
         var codigo = $"ING-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
         var dataCompra = DateTime.UtcNow;
 
-        foreach (var assento in assentos)
+        foreach (var a in assentos)
         {
-            db.Ingressos.Add(new Ingresso
-            {
-                UsuarioId = usuario.Id,
-                AssentoId = assento.Id,
-                CodigoUnico = $"{codigo}-{assento.Numero}",
-                Status = StatusIngresso.Ativo,
-                DataCompra = dataCompra
-            });
+            await conn.ExecuteAsync(
+                "INSERT INTO Ingressos (UsuarioId, AssentoId, CodigoUnico, Status, DataCompra) VALUES (@UsuarioId, @AssentoId, @Codigo, 0, @DataCompra)",
+                new { UsuarioId = usuarioId, AssentoId = (int)a.Id, Codigo = $"{codigo}-{(string)a.Numero}", DataCompra = dataCompra });
         }
 
-        await db.SaveChangesAsync();
-
-        _ = emailService.EnviarIngressoAsync(new CompraResultado
-        {
-            Sucesso          = true,
-            Mensagem         = "Compra realizada com sucesso!",
-            CodigoIngresso   = codigo,
-            NomeCliente      = request.NomeCliente,
-            EmailCliente     = request.Email,
-            EventoId         = evento.Id,
-            EventoNome       = evento.Nome,
-            EventoLocal      = evento.Local,
-            EventoData       = evento.Data,
-            SetorId          = setor.Id,
-            SetorNome        = setor.Nome,
-            NumerosAssentos  = assentos.Select(a => a.Numero).ToList(),
-            ValorTotal       = setor.Preco * assentos.Count,
-            DataCompra       = dataCompra
-        });
-
-        return new CompraResultado
+        var resultado = new CompraResultado
         {
             Sucesso = true,
             Mensagem = "Compra realizada com sucesso!",
             CodigoIngresso = codigo,
             NomeCliente = request.NomeCliente,
             EmailCliente = request.Email,
-            EventoId = evento.Id,
-            EventoNome = evento.Nome,
-            EventoLocal = evento.Local,
-            EventoData = evento.Data,
-            SetorId = setor.Id,
-            SetorNome = setor.Nome,
-            NumerosAssentos = assentos.Select(a => a.Numero).ToList(),
-            ValorTotal = setor.Preco * assentos.Count,
+            EventoId = (int)evento.Id,
+            EventoNome = (string)evento.Nome,
+            EventoLocal = (string)evento.Local,
+            EventoData = DateTime.Parse((string)evento.Data),
+            SetorId = (int)setor.Id,
+            SetorNome = (string)setor.Nome,
+            NumerosAssentos = assentos.Select(a => (string)a.Numero).ToList(),
+            ValorTotal = (decimal)setor.Preco * assentos.Count,
             DataCompra = dataCompra
         };
+
+        _ = emailService.EnviarIngressoAsync(resultado);
+        return resultado;
     }
 
     public async Task<IEnumerable<object>> ListarPorEmailAsync(string email)
     {
-        var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+        using var conn = new SqliteConnection(ConnStr);
+        var usuario = await conn.QueryFirstOrDefaultAsync<dynamic>(
+            "SELECT Id FROM Usuarios WHERE Email = @Email", new { Email = email });
         if (usuario is null) return [];
-        return await ListarPorUsuarioAsync(usuario.Id);
+        return await ListarPorUsuarioAsync((int)usuario.Id);
     }
 
     public async Task<IEnumerable<object>> ListarPorUsuarioAsync(int usuarioId)
     {
-        var usuario = await db.Usuarios.FindAsync(usuarioId);
-        var ingressos = await db.Ingressos
-            .Include(i => i.Assento).ThenInclude(a => a.Setor).ThenInclude(s => s.Evento)
-            .Where(i => i.UsuarioId == usuarioId && i.Status == StatusIngresso.Ativo)
-            .ToListAsync();
+        using var conn = new SqliteConnection(ConnStr);
+        var usuario = await conn.QueryFirstOrDefaultAsync<dynamic>(
+            "SELECT Nome, Email FROM Usuarios WHERE Id = @Id", new { Id = usuarioId });
+
+        var ingressos = await conn.QueryAsync<dynamic>(
+            @"SELECT i.Id, i.CodigoUnico, i.Status, i.DataCompra,
+                     a.Numero AS AssentoNumero,
+                     s.Id AS SetorId, s.Nome AS SetorNome, s.Preco,
+                     e.Id AS EventoId, e.Nome AS EventoNome, e.Local AS EventoLocal, e.Data AS EventoData
+              FROM Ingressos i
+              JOIN Assentos a ON a.Id = i.AssentoId
+              JOIN Setores s ON s.Id = a.SetorId
+              JOIN Eventos e ON e.Id = s.EventoId
+              WHERE i.UsuarioId = @UsuarioId AND i.Status = 0",
+            new { UsuarioId = usuarioId });
 
         return ingressos
-            .GroupBy(i => i.CodigoUnico.Length > 20 ? i.CodigoUnico[..20] : i.CodigoUnico)
+            .GroupBy(i => ((string)i.CodigoUnico).Length > 20 ? ((string)i.CodigoUnico)[..20] : (string)i.CodigoUnico)
             .Select(g =>
             {
-                var primeiro = g.First();
-                var evento = primeiro.Assento.Setor.Evento;
-                var setor = primeiro.Assento.Setor;
+                var p = g.First();
                 return (object)new
                 {
-                    Id = primeiro.Id,
+                    Id = (int)p.Id,
                     NomeCliente = usuario?.Nome ?? "",
                     Email = usuario?.Email ?? "",
-                    EventoId = evento.Id,
-                    EventoNome = evento.Nome,
-                    EventoLocal = evento.Local,
-                    EventoData = evento.Data,
-                    SetorId = setor.Id,
-                    SetorNome = setor.Nome,
-                    NumerosAssentos = g.Select(i => i.Assento.Numero).ToList(),
-                    ValorTotal = setor.Preco * g.Count(),
-                    DataCompra = primeiro.DataCompra,
+                    EventoId = (int)p.EventoId,
+                    EventoNome = (string)p.EventoNome,
+                    EventoLocal = (string)p.EventoLocal,
+                    EventoData = DateTime.Parse((string)p.EventoData),
+                    SetorId = (int)p.SetorId,
+                    SetorNome = (string)p.SetorNome,
+                    NumerosAssentos = g.Select(i => (string)i.AssentoNumero).ToList(),
+                    ValorTotal = (decimal)p.Preco * g.Count(),
+                    DataCompra = (DateTime)p.DataCompra,
                     CodigoIngresso = g.Key
                 };
             });
@@ -179,42 +177,32 @@ public class IngressoService(IIngressoRepository ingressoRepo, AppDbContext db, 
 
     public async Task<(bool Sucesso, string Mensagem)> CancelarAsync(int ingressoId)
     {
-        var cancelado = await ingressoRepo.CancelarAsync(ingressoId);
-        return cancelado
-            ? (true, "Ingresso cancelado.")
-            : (false, "Ingresso não encontrado ou já cancelado.");
+        using var conn = new SqliteConnection(ConnStr);
+        var rows = await conn.ExecuteAsync(
+            "UPDATE Ingressos SET Status = 1 WHERE Id = @Id AND Status = 0",
+            new { Id = ingressoId });
+        return rows > 0 ? (true, "Ingresso cancelado.") : (false, "Ingresso não encontrado ou já cancelado.");
     }
 
     public async Task<(bool Sucesso, string Mensagem)> ReembolsarAsync(string codigoIngresso)
     {
-        var prefixo = codigoIngresso.Trim();
-        
-        var ingressos = await db.Ingressos
-            .Include(i => i.Assento)
-            .ThenInclude(a => a.Setor)
-            .Where(i => i.CodigoUnico.StartsWith(prefixo) && i.Status == StatusIngresso.Ativo)
-            .ToListAsync();
+        using var conn = new SqliteConnection(ConnStr);
+        var ingressos = (await conn.QueryAsync<dynamic>(
+            @"SELECT i.Id, a.Id AS AssentoId, a.SetorId
+              FROM Ingressos i JOIN Assentos a ON a.Id = i.AssentoId
+              WHERE i.CodigoUnico LIKE @Prefixo AND i.Status = 0",
+            new { Prefixo = $"{codigoIngresso.Trim()}%" })).ToList();
 
         if (!ingressos.Any())
             return (false, "Ingresso não encontrado ou já reembolsado.");
 
-        var sucesso = true;
-        foreach (var ingresso in ingressos)
+        foreach (var i in ingressos)
         {
-            var reembolsado = await ingressoRepo.CancelarAsync(ingresso.Id);
-            if (!reembolsado) 
-                sucesso = false;
-            else
-            {
-                ingresso.Assento.Status = StatusAssento.Disponivel;
-                ingresso.Assento.Setor.QuantidadeDisponivel++;
-            }
+            await conn.ExecuteAsync("UPDATE Ingressos SET Status = 1 WHERE Id = @Id", new { Id = (int)i.Id });
+            await conn.ExecuteAsync("UPDATE Assentos SET Status = 0 WHERE Id = @Id", new { Id = (int)i.AssentoId });
+            await conn.ExecuteAsync("UPDATE Setores SET QuantidadeDisponivel = QuantidadeDisponivel + 1 WHERE Id = @Id", new { Id = (int)i.SetorId });
         }
-        
-        await db.SaveChangesAsync();
 
-        return sucesso
-            ? (true, "Reembolso processado com sucesso.")
-            : (false, "Ingresso não encontrado ou já reembolsado.");
+        return (true, "Reembolso processado com sucesso.");
     }
 }

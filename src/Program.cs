@@ -69,6 +69,11 @@ using (var conn = new SqliteConnection(connStr))
             FOREIGN KEY (UsuarioId) REFERENCES Usuarios(Id),
             FOREIGN KEY (AssentoId) REFERENCES Assentos(Id)
         );
+        CREATE TABLE IF NOT EXISTS Cupons (
+            Codigo              TEXT NOT NULL PRIMARY KEY,
+            PorcentagemDesconto REAL NOT NULL,
+            ValorMinimoRegra    REAL NOT NULL
+        );
     ");
 
     // Seed usuários padrão
@@ -283,7 +288,7 @@ app.MapPost("/api/auth/register", async (RegistroRequest req) =>
 app.MapGet("/api/relatorios", async () =>
 {
     using var conn = new SqliteConnection(connStr);
-    var eventos = (await conn.QueryAsync<dynamic>("SELECT Id, Nome, Descricao, Data, Local, ImagemUrl FROM Eventos")).ToList();
+    var eventos = (await conn.QueryAsync<dynamic>("SELECT Id, Nome, Descricao, DataEvento AS Data, Local, ImagemUrl FROM Eventos")).ToList();
     var setores = (await conn.QueryAsync<dynamic>("SELECT Id, EventoId, QuantidadeTotal FROM Setores")).ToList();
 
     var ingressos = (await conn.QueryAsync<dynamic>(

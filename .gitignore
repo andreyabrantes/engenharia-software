@@ -483,10 +483,5 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# SQLite database files
-*.db
-*.db-shm
-*.db-wal
-
 # API output files
 api_output.txt

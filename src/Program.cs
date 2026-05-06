@@ -27,6 +27,7 @@ var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? 
 using (var conn = new SqliteConnection(connStr))
 {
     conn.Open();
+
     conn.Execute(@"
         CREATE TABLE IF NOT EXISTS Usuarios (
             Id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +81,6 @@ using (var conn = new SqliteConnection(connStr))
     // Adiciona coluna Destaque se ainda não existir (migration segura para SQLite)
     try { conn.Execute("ALTER TABLE Eventos ADD COLUMN Destaque INTEGER NOT NULL DEFAULT 0;"); }
     catch { /* coluna já existe */ }
-}
 
     // Seed usuários padrão
     conn.Execute(@"
@@ -118,7 +118,6 @@ using (var conn = new SqliteConnection(connStr))
             conn.Execute("INSERT INTO Setores (Id, Nome, Preco, QuantidadeTotal, QuantidadeDisponivel, EventoId) VALUES (@Id, @Nome, @Preco, @Qtd, @Qtd, @EventoId)",
                 new { Id = sid, Nome = nome, Preco = preco, Qtd = qtd, EventoId = eid });
 
-            var assentoId = conn.ExecuteScalar<int>("SELECT COALESCE(MAX(Id), 0) FROM Assentos") + 1;
             for (int i = 1; i <= qtd; i++)
             {
                 var numero = $"{(char)('A' + (i - 1) / 10)}{((i - 1) % 10) + 1}";
@@ -127,14 +126,14 @@ using (var conn = new SqliteConnection(connStr))
             }
         }
     }
-}
+} // fim do using — conn descartada aqui, após todo o seed
 
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
 app.UseStaticFiles();
 
-// ── AV1: Endpoints obrigatórios — Dapper com parâmetros @ ────────────────────
+// ── Endpoints ─────────────────────────────────────────────────────────────────
 
 app.MapGet("/api/eventos", async (EventoService eventoService) =>
     Results.Ok(await eventoService.ListarTodosAsync()));
@@ -201,7 +200,7 @@ app.MapPost("/api/eventos/upload-imagem", async (UploadImagemRequest req, IWebHo
     return Results.Ok(new { Caminho = $"images/{nomeArquivo}" });
 });
 
-// ── Eventos (detalhes / assentos / exclusão) ──────────────────────────────────
+// ── Eventos (detalhes / assentos / exclusão / destaque) ──────────────────────
 
 app.MapGet("/api/eventos/{id:int}", async (int id, EventoService eventoService) =>
 {
@@ -227,7 +226,6 @@ app.MapDelete("/api/eventos/{id:int}", async (int id, EventoService eventoServic
 app.MapPatch("/api/eventos/{id:int}/destaque", async (int id) =>
 {
     using var conn = new SqliteConnection(connStr);
-    // Desmarca todos e marca apenas o escolhido
     await conn.ExecuteAsync("UPDATE Eventos SET Destaque = 0");
     var rows = await conn.ExecuteAsync("UPDATE Eventos SET Destaque = 1 WHERE Id = @Id", new { Id = id });
     return rows > 0 ? Results.Ok(new { mensagem = "Evento marcado como destaque." }) : Results.NotFound(new { mensagem = "Evento não encontrado." });

@@ -231,17 +231,6 @@
         box-shadow: 0 6px 20px rgba(79,70,229,0.4);
     }
 
-    .lp-btn-purple {
-        background: linear-gradient(135deg, #7c3aed, #4f46e5);
-        color: #fff;
-        box-shadow: 0 2px 8px rgba(124,58,237,0.3);
-    }
-
-    .lp-btn-purple:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(124,58,237,0.4);
-    }
-
     .lp-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
 
     /* Alertas */
@@ -306,18 +295,15 @@
             <h2 class="lp-card-title">
                 @if (aba == "login")   { <span>Bem-vindo de volta</span> }
                 @if (aba == "cliente") { <span>Criar conta</span> }
-                @if (aba == "admin")   { <span>Conta Organizador</span> }
             </h2>
             <p class="lp-card-sub">
                 @if (aba == "login")   { <span>Acesse sua conta para continuar</span> }
                 @if (aba == "cliente") { <span>Cadastre-se para comprar ingressos</span> }
-                @if (aba == "admin")   { <span>Cadastro de organizador de eventos</span> }
             </p>
 
             <div class="lp-tabs">
                 <button class="lp-tab @(aba=="login"   ?"on":"")" @onclick='()=>MudarAba("login")'>Entrar</button>
-                <button class="lp-tab @(aba=="cliente" ?"on":"")" @onclick='()=>MudarAba("cliente")'>Cadastro Cliente</button>
-                <button class="lp-tab @(aba=="admin"   ?"on":"")" @onclick='()=>MudarAba("admin")'>Cadastro Admin</button>
+                <button class="lp-tab @(aba=="cliente" ?"on":"")" @onclick='()=>MudarAba("cliente")'>Cadastro</button>
             </div>
 
             @if (!string.IsNullOrEmpty(mensagem))
@@ -352,17 +338,7 @@
                 </button>
             }
 
-            @if (aba == "admin")
-            {
-                <div class="lp-group"><label class="lp-label">Nome completo</label> <input type="text"     class="lp-input" @bind="regNome"     placeholder="Seu nome completo" /></div>
-                <div class="lp-group"><label class="lp-label">E-mail</label>         <input type="email"    class="lp-input" @bind="regEmail"    placeholder="seu@email.com" /></div>
-                <div class="lp-group"><label class="lp-label">CPF</label>            <input type="text"     class="lp-input" @bind="regCpf"      placeholder="00000000000" maxlength="11" /></div>
-                <div class="lp-group"><label class="lp-label">Senha</label>          <input type="password" class="lp-input" @bind="regSenha"    placeholder="Mínimo 6 caracteres" /></div>
-                <div class="lp-group"><label class="lp-label">Confirmar senha</label><input type="password" class="lp-input" @bind="regConfirmar" placeholder="Repita a senha" /></div>
-                <button class="lp-btn lp-btn-purple" @onclick='()=>Registrar("Admin")' disabled="@carregando">
-                    @if (carregando) { <span>⏳ Cadastrando...</span> } else { <span>Criar conta Admin →</span> }
-                </button>
-            }
+
 
         </div>
     </div>

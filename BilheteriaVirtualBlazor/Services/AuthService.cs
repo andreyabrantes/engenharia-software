@@ -1,25 +1,40 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using BilheteriaVirtualBlazor.Models;
+using Microsoft.JSInterop;
 
 namespace BilheteriaVirtualBlazor.Services;
 
 public class AuthService
 {
     private readonly HttpClient _http;
+    private readonly IJSRuntime _js;
     private Usuario? _usuarioLogado;
+    private const string StorageKey = "bilheteria_usuario";
 
     public event Action? OnAuthStateChanged;
 
-    // IHttpClientFactory não existe em WASM — recebe o HttpClient via DI manual
-    public AuthService(HttpClient http)
+    public AuthService(HttpClient http, IJSRuntime js)
     {
         _http = http;
+        _js   = js;
     }
 
     /// <summary>
-    /// Envia POST api/auth/login e guarda o utilizador em memória.
-    /// Retorna true em caso de sucesso, false se credenciais inválidas.
+    /// Restaura a sessão do localStorage. Deve ser chamado uma vez no startup (App.razor).
     /// </summary>
+    public async Task RestaurarSessaoAsync()
+    {
+        try
+        {
+            var json = await _js.InvokeAsync<string?>("localStorageHelper.get", StorageKey);
+            if (string.IsNullOrWhiteSpace(json)) return;
+            _usuarioLogado = JsonSerializer.Deserialize<Usuario>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch { _usuarioLogado = null; }
+    }
+
     public async Task<bool> LoginAsync(string email, string senha)
     {
         try
@@ -47,6 +62,9 @@ public class AuthService
                             : TipoUsuario.Cliente
             };
 
+            await _js.InvokeVoidAsync("localStorageHelper.set", StorageKey,
+                JsonSerializer.Serialize(_usuarioLogado));
+
             OnAuthStateChanged?.Invoke();
             return true;
         }
@@ -56,7 +74,6 @@ public class AuthService
         }
     }
 
-    // Mantém assinatura síncrona usada nas páginas existentes como wrapper
     public bool Login(string email, string senha)
         => LoginAsync(email, senha).GetAwaiter().GetResult();
 
@@ -86,18 +103,21 @@ public class AuthService
         }
     }
 
-    public void Logout()
+    public async Task LogoutAsync()
     {
         _usuarioLogado = null;
+        await _js.InvokeVoidAsync("localStorageHelper.remove", StorageKey);
         OnAuthStateChanged?.Invoke();
     }
+
+    // Mantém wrapper síncrono para compatibilidade
+    public void Logout() => LogoutAsync().GetAwaiter().GetResult();
 
     public Usuario? ObterUsuarioLogado() => _usuarioLogado;
     public bool EstaAutenticado()        => _usuarioLogado != null;
     public bool EhAdmin()                => _usuarioLogado?.Tipo == TipoUsuario.Admin;
     public bool EhCliente()              => _usuarioLogado?.Tipo == TipoUsuario.Cliente;
 
-    // DTO interno para deserializar a resposta da API
     private sealed class LoginResponse
     {
         public int    Id    { get; set; }

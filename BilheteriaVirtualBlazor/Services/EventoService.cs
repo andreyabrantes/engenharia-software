@@ -14,6 +14,20 @@ public class EventoService
         _http = http;
     }
 
+    /// <summary>
+    /// Resolve a URL completa de uma imagem de evento.
+    /// Se for um caminho relativo (ex: "images/rock.jpg"), monta com a base da API.
+    /// Se for um emoji ou URL absoluta, retorna como está.
+    /// </summary>
+    public string ResolverUrlImagem(string imagemUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imagemUrl)) return string.Empty;
+        if (imagemUrl.StartsWith("http") || imagemUrl.StartsWith("data:")) return imagemUrl;
+        if (imagemUrl.StartsWith("images/"))
+            return $"{_http.BaseAddress}{imagemUrl}";
+        return imagemUrl; // emoji ou qualquer outro valor
+    }
+
     // -------------------------------------------------------------------------
     // EVENTOS
     // -------------------------------------------------------------------------
@@ -156,6 +170,21 @@ public class EventoService
         }
     }
 
+    public async Task<bool> MarcarDestaqueAsync(int id)
+    {
+        try
+        {
+            var response = await _http.PatchAsync($"api/eventos/{id}/destaque", null);
+            if (!response.IsSuccessStatusCode) return false;
+            OnEstadoAlterado?.Invoke();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public bool ExcluirEvento(int id)
         => ExcluirEventoAsync(id).GetAwaiter().GetResult();
 
@@ -210,8 +239,9 @@ public class EventoService
                 $"api/ingressos/email/{Uri.EscapeDataString(email)}")
                 ?? new List<Compra>();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[ObterComprasPorEmailAsync] Erro: {ex.Message}");
             return new List<Compra>();
         }
     }

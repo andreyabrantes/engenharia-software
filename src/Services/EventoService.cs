@@ -22,7 +22,7 @@ public class EventoService(IConfiguration config)
     {
         using var conn = new SqliteConnection(ConnStr);
         var eventos = (await conn.QueryAsync<Evento>(
-            "SELECT Id, Nome, Descricao, DataEvento AS Data, Local, ImagemUrl FROM Eventos")).ToList();
+            "SELECT Id, Nome, Descricao, DataEvento AS Data, Local, ImagemUrl, Destaque FROM Eventos")).ToList();
 
         foreach (var e in eventos)
         {
@@ -37,7 +37,7 @@ public class EventoService(IConfiguration config)
     {
         using var conn = new SqliteConnection(ConnStr);
         var evento = await conn.QueryFirstOrDefaultAsync<Evento>(
-            "SELECT Id, Nome, Descricao, DataEvento AS Data, Local, ImagemUrl FROM Eventos WHERE Id = @Id",
+            "SELECT Id, Nome, Descricao, DataEvento AS Data, Local, ImagemUrl, Destaque FROM Eventos WHERE Id = @Id",
             new { Id = id });
         if (evento is null) return null;
 

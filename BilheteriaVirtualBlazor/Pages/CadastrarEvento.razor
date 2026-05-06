@@ -58,6 +58,11 @@
                 <p class="card-subtitle">Preencha as informações do evento para começar a vender ingressos de forma estruturada e controlada</p>
             </div>
 
+            @if (!string.IsNullOrEmpty(erroApiMensagem))
+            {
+                <div class="alert alert-danger">⚠️ @erroApiMensagem</div>
+            }
+
             <div class="form-group">
                 <label class="form-label">Nome do Evento</label>
                 <input type="text" class="form-control @(erroNome ? "input-error" : "")" @bind="novoEvento.Nome" placeholder="Ex: Show de Rock 2024" />
@@ -190,6 +195,7 @@
     private bool erroNome = false;
     private bool erroLocal = false;
     private bool erroSetores = false;
+    private string erroApiMensagem = string.Empty;
     private string previewUrl = string.Empty;
     private string erroImagem = string.Empty;
     private bool imagemArrastada = false;
@@ -235,6 +241,7 @@
         erroNome = false;
         erroLocal = false;
         erroSetores = false;
+        erroApiMensagem = string.Empty;
     }
 
     private void AdicionarSetor()
@@ -272,7 +279,10 @@
         if (sucesso)
             eventoCadastrado = true;
         else
-            erroSetores = true; // reutiliza a área de erro para mostrar falha da API
+        {
+            erroApiMensagem = erro;
+            erroSetores = true;
+        }
     }
 
     private void LimparFormulario() => InicializarNovoEvento();

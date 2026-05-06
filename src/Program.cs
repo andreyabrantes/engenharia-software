@@ -11,6 +11,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
 builder.Services.AddScoped<EventoService>();
 builder.Services.AddScoped<IngressoService>();
 builder.Services.AddSingleton<EmailService>();
+builder.Services.AddScoped<PagamentoService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -75,6 +76,11 @@ using (var conn = new SqliteConnection(connStr))
             ValorMinimoRegra    REAL NOT NULL
         );
     ");
+
+    // Adiciona coluna Destaque se ainda não existir (migration segura para SQLite)
+    try { conn.Execute("ALTER TABLE Eventos ADD COLUMN Destaque INTEGER NOT NULL DEFAULT 0;"); }
+    catch { /* coluna já existe */ }
+}
 
     // Seed usuários padrão
     conn.Execute(@"
@@ -159,7 +165,7 @@ app.MapPost("/api/cupons", async (CriarCupomRequest req) =>
 
     await conn.ExecuteAsync(
         "INSERT INTO Cupons (Codigo, PorcentagemDesconto, ValorMinimoRegra) VALUES (@Codigo, @PorcentagemDesconto, @ValorMinimoRegra)",
-        new { Codigo = req.Codigo, PorcentagemDesconto = req.Desconto, ValorMinimoRegra = req.valorMinimoregra });
+        new { Codigo = req.Codigo, PorcentagemDesconto = req.Desconto, ValorMinimoRegra = req.ValorMinimoRegra });
 
     return Results.Created($"/api/cupons/{req.Codigo}", new { req.Codigo });
 });
@@ -216,6 +222,15 @@ app.MapDelete("/api/eventos/{id:int}", async (int id, EventoService eventoServic
 {
     var removido = await eventoService.ExcluirAsync(id);
     return removido ? Results.Ok(new { mensagem = "Evento excluído com sucesso." }) : Results.NotFound(new { mensagem = "Evento não encontrado." });
+});
+
+app.MapPatch("/api/eventos/{id:int}/destaque", async (int id) =>
+{
+    using var conn = new SqliteConnection(connStr);
+    // Desmarca todos e marca apenas o escolhido
+    await conn.ExecuteAsync("UPDATE Eventos SET Destaque = 0");
+    var rows = await conn.ExecuteAsync("UPDATE Eventos SET Destaque = 1 WHERE Id = @Id", new { Id = id });
+    return rows > 0 ? Results.Ok(new { mensagem = "Evento marcado como destaque." }) : Results.NotFound(new { mensagem = "Evento não encontrado." });
 });
 
 // ── Ingressos ─────────────────────────────────────────────────────────────────
@@ -329,12 +344,11 @@ app.MapGet("/api/relatorios", async () =>
 
 // ── Pagamentos ────────────────────────────────────────────────────────────────
 
-app.MapPost("/api/pagamentos/checkout", (CheckoutRequest req) =>
+app.MapPost("/api/pagamentos/checkout", (CheckoutRequest req, PagamentoService pagamentoService) =>
 {
     if (string.IsNullOrWhiteSpace(req.TipoPagamento))
         return Results.BadRequest(new { Mensagem = "Tipo de pagamento é obrigatório." });
 
-    var pagamentoService = new PagamentoService();
     Pagamento pagamento = req.TipoPagamento.ToUpper() switch
     {
         "PIX"      => new PagamentoPix     { ValorTotal = req.Valor, ChavePixOrigem = req.DadosPagamento },
@@ -357,7 +371,7 @@ app.Run();
 
 public record LoginRequest(string Email, string Senha);
 public record RegistroRequest(string Nome, string Email, string Cpf, string Senha, string Tipo = "Cliente");
-public record CriarCupomRequest(string Codigo, decimal Desconto, decimal valorMinimoregra, DateTime DataExpiracao);
+public record CriarCupomRequest(string Codigo, decimal Desconto, decimal ValorMinimoRegra, DateTime DataExpiracao);
 public record CriarUsuarioRequest(string Nome, string Email, string Cpf, string Senha);
 public record UploadImagemRequest(string Base64, string Extensao);
 

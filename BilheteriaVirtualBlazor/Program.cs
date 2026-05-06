@@ -12,7 +12,7 @@ var apiBaseAddress = new Uri("http://localhost:5047/");
 
 builder.Services.AddSingleton(new HttpClient { BaseAddress = apiBaseAddress });
 
-builder.Services.AddSingleton<AuthService>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<EventoService>();
 builder.Services.AddSingleton<EmailService>();
 

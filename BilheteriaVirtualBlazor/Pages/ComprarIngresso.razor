@@ -201,9 +201,12 @@
 
             <div class="ingresso-digital">
                 <div class="ingresso-header">
-                    @if (eventoSelecionado?.ImagemUrl.StartsWith("images/") == true)
+                    @{
+                        var ingressoUrl = EventoService.ResolverUrlImagem(eventoSelecionado?.ImagemUrl ?? "");
+                    }
+                    @if (ingressoUrl.StartsWith("http") || ingressoUrl.StartsWith("data:"))
                     {
-                        <img src="@eventoSelecionado.ImagemUrl" alt="@eventoSelecionado.Nome"
+                        <img src="@ingressoUrl" alt="@eventoSelecionado?.Nome"
                              style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />
                     }
                     else

@@ -72,10 +72,18 @@ public class IngressoService(IConfiguration config, EmailService emailService)
         List<dynamic> assentos;
         lock (_lock)
         {
-            var ids = string.Join(",", request.AssentoIds);
+            // Usa parâmetros nomeados para cada ID — evita interpolação direta na query
+            var parametros = new DynamicParameters();
+            parametros.Add("SetorId", request.SetorId);
+            var inClause = string.Join(",", request.AssentoIds.Select((id, idx) =>
+            {
+                parametros.Add($"id{idx}", id);
+                return $"@id{idx}";
+            }));
+
             assentos = conn.Query<dynamic>(
-                $"SELECT Id, Numero, Status FROM Assentos WHERE Id IN ({ids}) AND SetorId = @SetorId",
-                new { SetorId = request.SetorId }).ToList();
+                $"SELECT Id, Numero, Status FROM Assentos WHERE Id IN ({inClause}) AND SetorId = @SetorId",
+                parametros).ToList();
 
             if (assentos.Count != request.AssentoIds.Count)
                 return new CompraResultado { Sucesso = false, Mensagem = "Um ou mais assentos não encontrados." };
@@ -148,14 +156,23 @@ public class IngressoService(IConfiguration config, EmailService emailService)
               JOIN Assentos a ON a.Id = i.AssentoId
               JOIN Setores s ON s.Id = a.SetorId
               JOIN Eventos e ON e.Id = s.EventoId
-              WHERE i.UsuarioId = @UsuarioId AND i.Status = 0",
+              WHERE i.UsuarioId = @UsuarioId",
             new { UsuarioId = usuarioId });
 
         return ingressos
-            .GroupBy(i => ((string)i.CodigoUnico).Length > 20 ? ((string)i.CodigoUnico)[..20] : (string)i.CodigoUnico)
+            .GroupBy(i =>
+            {
+                // O código de cada assento é "ING-YYYYMMDD-XXXXXXXX-A1".
+                // Agrupa pelo prefixo sem o sufixo do assento (últimos 3 chars: "-XX").
+                var cod = (string)i.CodigoUnico;
+                var lastDash = cod.LastIndexOf('-');
+                return lastDash > 0 ? cod[..lastDash] : cod;
+            })
             .Select(g =>
             {
                 var p = g.First();
+                // Se qualquer ingresso do grupo foi reembolsado, o grupo inteiro é reembolsado
+                var status = g.Any(i => (int)i.Status == 1) ? 1 : 0;
                 return (object)new
                 {
                     Id = (int)p.Id,
@@ -169,8 +186,9 @@ public class IngressoService(IConfiguration config, EmailService emailService)
                     SetorNome = (string)p.SetorNome,
                     NumerosAssentos = g.Select(i => (string)i.AssentoNumero).ToList(),
                     ValorTotal = (decimal)p.Preco * g.Count(),
-                    DataCompra = (DateTime)p.DataCompra,
-                    CodigoIngresso = g.Key
+                    DataCompra = DateTime.Parse((string)p.DataCompra),
+                    CodigoIngresso = g.Key,
+                    Status = status
                 };
             });
     }

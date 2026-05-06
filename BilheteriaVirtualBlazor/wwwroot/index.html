@@ -57,16 +57,27 @@
 
     <div id="app"></div>
 
-    <script src="_framework/blazor.webassembly.js"></script>
     <script>
-        // Remove loading screen when Blazor is ready
-        window.addEventListener('load', function () {
-            setTimeout(function () {
+        // localStorage helpers — devem estar disponíveis antes do Blazor iniciar
+        window.localStorageHelper = {
+            set: function (key, value) { localStorage.setItem(key, value); },
+            get: function (key) { return localStorage.getItem(key); },
+            remove: function (key) { localStorage.removeItem(key); }
+        };
+
+        // Remove o loading screen quando o Blazor popular o #app
+        var observer = new MutationObserver(function () {
+            var app = document.getElementById('app');
+            if (app && app.children.length > 0) {
+                observer.disconnect();
                 var ls = document.getElementById('loading-screen');
-                if (ls) { ls.style.opacity = '0'; setTimeout(function(){ ls.remove(); }, 400); }
-            }, 800);
+                if (ls) { ls.style.opacity = '0'; setTimeout(function () { ls.remove(); }, 400); }
+            }
         });
+        observer.observe(document.getElementById('app'), { childList: true });
     </script>
+
+    <script src="_framework/blazor.webassembly.js"></script>
 </body>
 
 </html>

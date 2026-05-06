@@ -8,6 +8,7 @@ public class Evento
     public DateTime Data { get; set; }
     public string Local { get; set; } = string.Empty;
     public string ImagemUrl { get; set; } = string.Empty;
+    public bool Destaque { get; set; } = false;
     public List<Setor> Setores { get; set; } = new();
 
     // Corrigido: só esgotado se TEM setores e todos estão sem vagas

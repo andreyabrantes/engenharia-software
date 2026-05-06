@@ -8,5 +8,6 @@ public class Evento
     public DateTime Data { get; set; }
     public string Local { get; set; } = string.Empty;
     public string ImagemUrl { get; set; } = "🎉";
+    public bool Destaque { get; set; } = false;
     public ICollection<Setor> Setores { get; set; } = [];
 }

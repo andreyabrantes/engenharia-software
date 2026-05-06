@@ -156,9 +156,12 @@
     {
         var heroPreco = eventoDestaque.Setores.Any() ? eventoDestaque.Setores.Min(s => s.Preco) : 0;
         <div class="hero-section" style="margin: -2rem -1.5rem 2.5rem; max-width: none;">
-            @if (eventoDestaque.ImagemUrl.StartsWith("images/"))
+            @{
+                var heroUrl = EventoService.ResolverUrlImagem(eventoDestaque.ImagemUrl);
+            }
+            @if (heroUrl.StartsWith("http") || heroUrl.StartsWith("data:"))
             {
-                <img src="http://localhost:5047/@eventoDestaque.ImagemUrl" alt="@eventoDestaque.Nome" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                <img src="@heroUrl" alt="@eventoDestaque.Nome" style="width:100%;height:100%;object-fit:cover;display:block;" />
             }
             else
             {
@@ -251,9 +254,12 @@
 
                 <div class="ev-card">
                     <div class="ev-img">
-                        @if (evento.ImagemUrl.StartsWith("images/"))
+                        @{
+                            var cardUrl = EventoService.ResolverUrlImagem(evento.ImagemUrl);
+                        }
+                        @if (cardUrl.StartsWith("http") || cardUrl.StartsWith("data:"))
                         {
-                            <img src="http://localhost:5047/@evento.ImagemUrl" alt="@evento.Nome" />
+                            <img src="@cardUrl" alt="@evento.Nome" />
                         }
                         else
                         {
@@ -308,7 +314,11 @@
                                     🎫 Comprar Ingresso
                                 </button>
                                 @if (AuthService.EhAdmin())
-                                { <button class="ev-btn-del" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button> }
+                                {
+                                    <button class="ev-btn-del" style="background:@(evento.Destaque ? "#fef9c3" : "#fee2e2");color:@(evento.Destaque ? "#ca8a04" : "#ef4444");border-color:@(evento.Destaque ? "rgba(202,138,4,0.3)" : "rgba(239,68,68,0.2)");"
+                                            @onclick="() => MarcarDestaque(evento.Id)" title="@(evento.Destaque ? "Destaque ativo" : "Marcar como destaque")">⭐</button>
+                                    <button class="ev-btn-del" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button>
+                                }
                             </div>
                         }
                         else
@@ -316,7 +326,11 @@
                             <div class="ev-actions">
                                 <button class="ev-btn ev-btn-disabled" disabled>🚫 Esgotado</button>
                                 @if (AuthService.EhAdmin())
-                                { <button class="ev-btn-del" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button> }
+                                {
+                                    <button class="ev-btn-del" style="background:@(evento.Destaque ? "#fef9c3" : "#fee2e2");color:@(evento.Destaque ? "#ca8a04" : "#ef4444");border-color:@(evento.Destaque ? "rgba(202,138,4,0.3)" : "rgba(239,68,68,0.2)");"
+                                            @onclick="() => MarcarDestaque(evento.Id)" title="@(evento.Destaque ? "Destaque ativo" : "Marcar como destaque")">⭐</button>
+                                    <button class="ev-btn-del" @onclick="() => ExcluirEvento(evento.Id)" title="Excluir">🗑️</button>
+                                }
                             </div>
                         }
                     </div>
@@ -385,7 +399,8 @@
         eventos = await EventoService.ObterEventosAsync();
         eventoDestaque = eventos
             .Where(e => !e.Esgotado && e.Data >= DateTime.Now)
-            .OrderByDescending(e => e.Setores.Sum(s => s.QuantidadeTotal - s.QuantidadeDisponivel))
+            .OrderByDescending(e => e.Destaque)
+            .ThenByDescending(e => e.Setores.Sum(s => s.QuantidadeTotal - s.QuantidadeDisponivel))
             .FirstOrDefault();
         carregando = false;
     }
@@ -393,5 +408,6 @@
     private void FiltrarCategoria(string key) => categoriaAtiva = key;
     private void ComprarIngresso(int id) => Navigation.NavigateTo($"/comprar?eventoId={id}");
     private async Task ExcluirEvento(int id) { await EventoService.ExcluirEventoAsync(id); await CarregarEventosAsync(); }
+    private async Task MarcarDestaque(int id) { await EventoService.MarcarDestaqueAsync(id); await CarregarEventosAsync(); }
     public void Dispose() => EventoService.OnEstadoAlterado -= AtualizarEventos;
 }

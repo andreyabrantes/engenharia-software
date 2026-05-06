@@ -11,6 +11,7 @@ Plataforma de comercialização e gestão de ingressos desenvolvida com **Blazor
 | Nathan Salles | [@Shelby1311](https://github.com/shelby1311) |
 | Cristiano Cordeiro | [@CristianoCSantos23](https://github.com/CristianoCSantos23) |
 | Lucas Gabriel | [@Lucas-zip](https://github.com/Lucas-zip) |
+| Julia Scarpi | [@juscarpi](https://github.com/juscarpi) |
 
 > Projeto orientado pelo professor André Campos.
 

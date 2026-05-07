@@ -1,10 +1,13 @@
 namespace BilheteriaAPI.Models;
 
+/// <summary>
+/// Representa um cupom de desconto.
+/// Tabela: Cupons
+/// PK: Codigo (VARCHAR(50))
+/// </summary>
 public class Cupom
 {
-    public int Id { get; set; }
     public string Codigo { get; set; } = string.Empty;
-    public decimal Desconto { get; set; }
-    public decimal valorMinimoregra { get; set; }
-    public DateTime DataExpiracao { get; set; }
+    public decimal PorcentagemDesconto { get; set; }
+    public decimal ValorMinimoRegra { get; set; }
 }

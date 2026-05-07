@@ -1,6 +1,173 @@
-@BilheteriaAPI_HostAddress = http://localhost:5047
+@host = http://localhost:5047
 
-GET {{BilheteriaAPI_HostAddress}}/weatherforecast/
-Accept: application/json
+### ══════════════════════════════════════════════════════════════════════════════
+### ENDPOINTS OBRIGATÓRIOS DA AV1
+### ══════════════════════════════════════════════════════════════════════════════
 
-###
+### 1. POST /api/eventos - Cadastrar um novo evento
+POST {{host}}/api/eventos
+Content-Type: application/json
+
+{
+  "nome": "Show de Rock 2026",
+  "capacidadeTotal": 500,
+  "dataEvento": "2026-08-15T20:00:00",
+  "precoPadrao": 100.00
+}
+
+### 2. POST /api/eventos - Cadastrar outro evento
+POST {{host}}/api/eventos
+Content-Type: application/json
+
+{
+  "nome": "Festival de Música Eletrônica",
+  "capacidadeTotal": 300,
+  "dataEvento": "2026-09-05T22:00:00",
+  "precoPadrao": 150.00
+}
+
+### 3. POST /api/eventos - Teste de validação (Nome vazio - deve retornar 400)
+POST {{host}}/api/eventos
+Content-Type: application/json
+
+{
+  "nome": "",
+  "capacidadeTotal": 500,
+  "dataEvento": "2026-08-15T20:00:00",
+  "precoPadrao": 100.00
+}
+
+### 4. POST /api/eventos - Teste de validação (Capacidade zero - deve retornar 400)
+POST {{host}}/api/eventos
+Content-Type: application/json
+
+{
+  "nome": "Evento Teste",
+  "capacidadeTotal": 0,
+  "dataEvento": "2026-08-15T20:00:00",
+  "precoPadrao": 100.00
+}
+
+### 5. GET /api/eventos - Listar todos os eventos
+GET {{host}}/api/eventos
+
+### ──────────────────────────────────────────────────────────────────────────────
+
+### 6. POST /api/cupons - Cadastrar um cupom de desconto
+POST {{host}}/api/cupons
+Content-Type: application/json
+
+{
+  "codigo": "PROMO10",
+  "porcentagemDesconto": 10.0,
+  "valorMinimoRegra": 50.00
+}
+
+### 7. POST /api/cupons - Cadastrar outro cupom
+POST {{host}}/api/cupons
+Content-Type: application/json
+
+{
+  "codigo": "DESCONTO20",
+  "porcentagemDesconto": 20.0,
+  "valorMinimoRegra": 100.00
+}
+
+### 8. POST /api/cupons - Teste de validação (Código vazio - deve retornar 400)
+POST {{host}}/api/cupons
+Content-Type: application/json
+
+{
+  "codigo": "",
+  "porcentagemDesconto": 10.0,
+  "valorMinimoRegra": 50.00
+}
+
+### 9. POST /api/cupons - Teste de validação (Desconto zero - deve retornar 400)
+POST {{host}}/api/cupons
+Content-Type: application/json
+
+{
+  "codigo": "INVALIDO",
+  "porcentagemDesconto": 0,
+  "valorMinimoRegra": 50.00
+}
+
+### 10. POST /api/cupons - Teste de duplicação (deve retornar 400)
+POST {{host}}/api/cupons
+Content-Type: application/json
+
+{
+  "codigo": "PROMO10",
+  "porcentagemDesconto": 15.0,
+  "valorMinimoRegra": 50.00
+}
+
+### ──────────────────────────────────────────────────────────────────────────────
+
+### 11. POST /api/usuarios - Cadastrar um usuário
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "João da Silva",
+  "email": "joao@email.com",
+  "cpf": "12345678900"
+}
+
+### 12. POST /api/usuarios - Cadastrar outro usuário
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Maria Santos",
+  "email": "maria@email.com",
+  "cpf": "98765432100"
+}
+
+### 13. POST /api/usuarios - Teste de validação (Nome vazio - deve retornar 400)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "",
+  "email": "teste@email.com",
+  "cpf": "11111111111"
+}
+
+### 14. POST /api/usuarios - Teste de validação (Email vazio - deve retornar 400)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Teste",
+  "email": "",
+  "cpf": "11111111111"
+}
+
+### 15. POST /api/usuarios - Teste de validação (CPF vazio - deve retornar 400)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Teste",
+  "email": "teste@email.com",
+  "cpf": ""
+}
+
+### 16. POST /api/usuarios - Teste Anti-Cambista (CPF duplicado - deve retornar 400)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Cambista Tentando",
+  "email": "cambista@email.com",
+  "cpf": "12345678900"
+}
+
+### ══════════════════════════════════════════════════════════════════════════════
+### TESTES DE SEGURANÇA
+### ══════════════════════════════════════════════════════════════════════════════
+
+### Teste: Todas as queries devem usar parâmetros @ (sem SQL Injection)
+### Verificar no código que não há concatenação ou interpolação de strings SQL

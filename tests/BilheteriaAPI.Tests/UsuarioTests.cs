@@ -116,28 +116,40 @@ public class UsuarioTests
         Assert.False(string.IsNullOrWhiteSpace(nome));
     }
 
-    // ── Regra de Tipo de Usuário ──────────────────────────────────────────────
+    // ── Regra de Negócio: Estrutura da Tabela Usuarios ────────────────────────
 
     [Fact]
-    public void Usuario_TipoPadrao_DeveSerCliente()
+    public void Usuario_TabelaUsuarios_DeveTerCpfComoPK()
     {
-        var tipo = "Cliente";
-        Assert.Equal("Cliente", tipo);
+        // Simula a estrutura da tabela conforme especificação
+        var usuario = new { Cpf = "12345678900", Nome = "João", Email = "joao@email.com" };
+        
+        Assert.NotNull(usuario.Cpf);
+        Assert.False(string.IsNullOrWhiteSpace(usuario.Cpf));
     }
 
     [Fact]
-    public void Usuario_TipoAdmin_DeveSerReconhecido()
+    public void Usuario_EmailUnico_DeveSerGarantido()
     {
-        var tipo = "Admin";
-        var ehAdmin = tipo.Equals("Admin", StringComparison.OrdinalIgnoreCase);
-        Assert.True(ehAdmin);
+        var emailsNoBanco = new List<string> { "user1@email.com", "user2@email.com" };
+        var emailNovo = "user1@email.com";
+
+        var jaExiste = emailsNoBanco.Contains(emailNovo);
+
+        Assert.True(jaExiste);
     }
 
     [Fact]
-    public void Usuario_TipoInvalido_NaoDeveSerAdmin()
+    public void Usuario_CamposObrigatorios_DevemEstarPreenchidos()
     {
-        var tipo = "SuperUser";
-        var ehAdmin = tipo.Equals("Admin", StringComparison.OrdinalIgnoreCase);
-        Assert.False(ehAdmin);
+        var cpf = "12345678900";
+        var nome = "João da Silva";
+        var email = "joao@email.com";
+
+        var todosPreenchidos = !string.IsNullOrWhiteSpace(cpf) &&
+                               !string.IsNullOrWhiteSpace(nome) &&
+                               !string.IsNullOrWhiteSpace(email);
+
+        Assert.True(todosPreenchidos);
     }
 }

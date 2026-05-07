@@ -1,6 +1,6 @@
 # 🎟️ TicketPrime — Sistema de Bilheteria Virtual
 
-Plataforma de comercialização e gestão de ingressos desenvolvida com **Blazor WebAssembly** e **Minimal API C#**, como projeto da disciplina de Engenharia de Software — 5° Período de Ciência da Computação, Unifeso.
+Plataforma de comercialização e gestão de ingressos desenvolvida com **Minimal API C#** e **Dapper**, como projeto da disciplina de Engenharia de Software — 5° Período de Ciência da Computação, Unifeso.
 
 ## 👥 Equipe
 
@@ -39,16 +39,7 @@ dotnet run
 
 Swagger disponível em: **http://localhost:5047/swagger**
 
-### 3. Execute o Frontend (Blazor)
-
-```bash
-cd BilheteriaVirtualBlazor
-dotnet run
-```
-
-Acesse no navegador: **http://localhost:5000**
-
-### 4. Execute os Testes
+### 3. Execute os Testes
 
 ```bash
 cd tests/BilheteriaAPI.Tests
@@ -65,15 +56,6 @@ dotnet publish -c Release # Publicar para produção
 
 ---
 
-## 🔐 Contas de Teste
-
-| Tipo | E-mail | Senha |
-|---|---|---|
-| Administrador | admin@bilheteria.com | admin123 |
-| Cliente | cliente@email.com | cliente123 |
-
----
-
 ## 📁 Estrutura do Projeto
 
 ```
@@ -81,9 +63,84 @@ engenharia-software/
 ├── src/          # Minimal API em C# com Dapper
 ├── db/           # Scripts SQL (CREATE TABLE)
 ├── docs/         # Requisitos, arquitetura e operação
-├── tests/        # Testes automatizados xUnit
-└── BilheteriaVirtualBlazor/  # Frontend Blazor WebAssembly
+└── tests/        # Testes automatizados xUnit
 ```
+
+---
+
+## 🗄️ Banco de Dados
+
+O sistema utiliza **SQLite** com as seguintes tabelas:
+
+### Usuarios
+- **Cpf** (VARCHAR(14), PK)
+- Nome (VARCHAR(100))
+- Email (VARCHAR(100), UNIQUE)
+
+### Eventos
+- **Id** (INTEGER, PK, AUTOINCREMENT)
+- Nome (VARCHAR(100))
+- CapacidadeTotal (INTEGER)
+- DataEvento (DATETIME)
+- PrecoPadrao (NUMERIC(10,2))
+
+### Cupons
+- **Codigo** (VARCHAR(50), PK)
+- PorcentagemDesconto (NUMERIC(5,2))
+- ValorMinimoRegra (NUMERIC(10,2))
+
+### Reservas
+- **Id** (INTEGER, PK, AUTOINCREMENT)
+- UsuarioCpf (VARCHAR(14), FK → Usuarios.Cpf)
+- EventoId (INTEGER, FK → Eventos.Id)
+- CupomUtilizado (VARCHAR(50), FK → Cupons.Codigo, NULL)
+- ValorFinalPago (NUMERIC(10,2))
+
+---
+
+## 🔌 Endpoints da API (AV1)
+
+### POST /api/eventos
+Cadastra um novo evento no sistema.
+
+**Request Body:**
+```json
+{
+  "nome": "Show de Rock 2026",
+  "capacidadeTotal": 500,
+  "dataEvento": "2026-08-15T20:00:00",
+  "precoPadrao": 100.00
+}
+```
+
+### GET /api/eventos
+Lista todos os eventos disponíveis.
+
+### POST /api/cupons
+Cadastra um novo cupom de desconto.
+
+**Request Body:**
+```json
+{
+  "codigo": "PROMO10",
+  "porcentagemDesconto": 10.0,
+  "valorMinimoRegra": 50.00
+}
+```
+
+### POST /api/usuarios
+Cadastra um novo usuário.
+
+**Request Body:**
+```json
+{
+  "nome": "João da Silva",
+  "email": "joao@email.com",
+  "cpf": "12345678900"
+}
+```
+
+**Retorna erro 400 se o CPF já existir** (proteção anti-cambista).
 
 ---
 
@@ -141,10 +198,35 @@ Então o sistema deve exibir o total de ingressos vendidos, receita total e ocup
 
 - **Minimal API** — .NET 9.0 / C# 13
 - **Dapper** — acesso ao banco com parâmetros `@` (sem ORM)
-- **SQL** — banco de dados relacional
+- **SQLite** — banco de dados relacional
 - **xUnit** — testes automatizados
-- **Blazor WebAssembly** — frontend SPA em C#
-- **CSS3** — design system próprio com variáveis e responsividade
+
+---
+
+## 🔒 Segurança
+
+- ✅ **Zero SQL Injection**: Todas as consultas usam parâmetros `@`
+- ✅ **Validação Fail-Fast**: Retorna `BadRequest` (400) para dados inválidos
+- ✅ **Proteção Anti-Cambista**: CPF único por usuário
+- ✅ **Proteção contra Fraude**: Validação de valor mínimo em cupons
+
+---
+
+## 🧪 Testes
+
+O projeto possui **60+ testes automatizados** cobrindo:
+
+- ✅ Validação de campos obrigatórios
+- ✅ Regras de negócio (capacidade, cupons, CPF único)
+- ✅ Cálculos de desconto e valor final
+- ✅ Proteção contra valores negativos
+- ✅ Estrutura das tabelas do banco
+
+Execute os testes com:
+```bash
+cd tests/BilheteriaAPI.Tests
+dotnet test
+```
 
 ---
 
@@ -160,6 +242,19 @@ Veja mais em [`docs/rituais-scrum.md`](docs/rituais-scrum.md).
 
 | Risco | Mitigação |
 |---|---|
-| Race condition em reservas simultâneas | Validação de disponibilidade no serviço antes de confirmar |
-| Fraude com cupons negativos | Validação de valor mínimo e desconto positivo |
+| Venda além da capacidade | Validação de CapacidadeTotal antes de criar reserva |
+| Fraude com cupons negativos | Validação de PorcentagemDesconto > 0 e ValorMinimoRegra >= 0 |
 | CPF duplicado (cambistas) | Retorno 400 com verificação via `WHERE Cpf = @Cpf` |
+| SQL Injection | Uso exclusivo de parâmetros `@` em todas as queries |
+
+---
+
+## 📚 Documentação Adicional
+
+- [Requisitos e Histórias de Usuário](docs/requisitos.md)
+- [Script SQL do Banco de Dados](db/script.sql)
+- [Relatório de Validação AV1](VALIDACAO_AV1.md)
+
+---
+
+**Desenvolvido com 💙 pela equipe TicketPrime**

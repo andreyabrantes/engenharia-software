@@ -485,3 +485,7 @@ $RECYCLE.BIN/
 
 # API output files
 api_output.txt
+
+# Pastas removidas do projeto (Entity Framework proibido)
+BilheteriaAPI/
+engenharia-software-main/

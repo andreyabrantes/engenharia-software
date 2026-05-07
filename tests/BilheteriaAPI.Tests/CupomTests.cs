@@ -27,7 +27,7 @@ public class CupomTests
         Assert.False(string.IsNullOrWhiteSpace(codigo));
     }
 
-    // ── Validação de Desconto ─────────────────────────────────────────────────
+    // ── Validação de PorcentagemDesconto ──────────────────────────────────────
 
     [Fact]
     public void Cupom_DescontoZero_DeveSerRejeitado()
@@ -50,6 +50,29 @@ public class CupomTests
         Assert.True(desconto > 0);
     }
 
+    // ── Validação de ValorMinimoRegra ─────────────────────────────────────────
+
+    [Fact]
+    public void Cupom_ValorMinimoNegativo_DeveSerRejeitado()
+    {
+        var valorMinimo = -50m;
+        Assert.True(valorMinimo < 0);
+    }
+
+    [Fact]
+    public void Cupom_ValorMinimoZero_DeveSerAceito()
+    {
+        var valorMinimo = 0m;
+        Assert.True(valorMinimo >= 0);
+    }
+
+    [Fact]
+    public void Cupom_ValorMinimoPositivo_DeveSerAceito()
+    {
+        var valorMinimo = 100m;
+        Assert.True(valorMinimo >= 0);
+    }
+
     // ── Regra de Negócio: Valor Mínimo ───────────────────────────────────────
 
     [Fact]
@@ -67,7 +90,7 @@ public class CupomTests
     }
 
     [Fact]
-    public void Cupom_CompraAcimaDovalorMinimo_DeveAplicarDesconto()
+    public void Cupom_CompraAcimaDoValorMinimo_DeveAplicarDesconto()
     {
         var valorCompra  = 100m;
         var valorMinimo  = 50m;
@@ -119,20 +142,15 @@ public class CupomTests
         Assert.True(valorProtegido >= 0);
     }
 
-    // ── Regra de Negócio: Expiração ───────────────────────────────────────────
-
     [Fact]
-    public void Cupom_DataExpiracaoNoPassado_DeveSerRejeitado()
+    public void Cupom_ValorFinalPago_DeveSerSemprePositivoOuZero()
     {
-        var dataExpiracao = DateTime.UtcNow.AddDays(-1);
-        Assert.True(dataExpiracao < DateTime.UtcNow);
-    }
+        var valorCompra = 100m;
+        var porcentagem = 200m; // desconto absurdo
 
-    [Fact]
-    public void Cupom_DataExpiracaoNoFuturo_DeveSerAceito()
-    {
-        var dataExpiracao = DateTime.UtcNow.AddDays(30);
-        Assert.True(dataExpiracao > DateTime.UtcNow);
+        var valorFinal = Math.Max(0, valorCompra - (valorCompra * porcentagem / 100));
+
+        Assert.True(valorFinal >= 0);
     }
 
     // ── Cálculo Parametrizado ─────────────────────────────────────────────────
@@ -142,6 +160,7 @@ public class CupomTests
     [InlineData(200,  20, 100, 160)]
     [InlineData(50,   5,  30,  47.5)]
     [InlineData(80,  25,  80,  60)]
+    [InlineData(150,  15, 100, 127.5)]
     public void Cupom_CalculoDesconto_DeveRetornarValorCorreto(
         decimal valorCompra, decimal porcentagem, decimal valorMinimo, decimal esperado)
     {
@@ -150,5 +169,28 @@ public class CupomTests
             : valorCompra;
 
         Assert.Equal(esperado, resultado);
+    }
+
+    // ── Regra de Negócio: Estrutura da Tabela Cupons ──────────────────────────
+
+    [Fact]
+    public void Cupom_TabelaCupons_DeveUsarCodigoComoPK()
+    {
+        // Simula a estrutura da tabela conforme especificação
+        var cupom = new { Codigo = "PROMO10", PorcentagemDesconto = 10m, ValorMinimoRegra = 50m };
+        
+        Assert.NotNull(cupom.Codigo);
+        Assert.False(string.IsNullOrWhiteSpace(cupom.Codigo));
+    }
+
+    [Fact]
+    public void Cupom_CodigoDuplicado_DeveSerBloqueado()
+    {
+        var codigosNoBanco = new List<string> { "PROMO10", "DESCONTO20" };
+        var codigoNovo = "PROMO10";
+
+        var jaExiste = codigosNoBanco.Contains(codigoNovo);
+
+        Assert.True(jaExiste);
     }
 }

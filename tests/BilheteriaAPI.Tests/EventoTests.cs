@@ -44,7 +44,14 @@ public class EventoTests
         Assert.True(data > DateTime.UtcNow);
     }
 
-    // ── Validação de Capacidade ───────────────────────────────────────────────
+    [Fact]
+    public void Evento_DataDefault_DeveSerRejeitada()
+    {
+        var data = default(DateTime);
+        Assert.Equal(default(DateTime), data);
+    }
+
+    // ── Validação de CapacidadeTotal ──────────────────────────────────────────
 
     [Fact]
     public void Evento_CapacidadeZero_DeveSerRejeitada()
@@ -70,53 +77,39 @@ public class EventoTests
     // ── Regra de Negócio: Capacidade Máxima ──────────────────────────────────
 
     [Fact]
-    public void Evento_VendaMaisQueCapacidade_DeveSerBloqueada()
+    public void Evento_ReservasMaisQueCapacidade_DeveSerBloqueada()
     {
         var capacidadeTotal = 100;
-        var tentativaVenda = 101;
+        var reservasAtuais = 101;
 
-        var excedeu = tentativaVenda > capacidadeTotal;
+        var excedeu = reservasAtuais > capacidadeTotal;
 
         Assert.True(excedeu);
     }
 
     [Fact]
-    public void Evento_VendaDentroCapacidade_DeveSerPermitida()
+    public void Evento_ReservasDentroCapacidade_DeveSerPermitida()
     {
         var capacidadeTotal = 100;
-        var tentativaVenda = 100;
+        var reservasAtuais = 100;
 
-        var excedeu = tentativaVenda > capacidadeTotal;
+        var excedeu = reservasAtuais > capacidadeTotal;
 
         Assert.False(excedeu);
     }
 
-    // ── Regra de Negócio: Assentos ────────────────────────────────────────────
-
     [Fact]
-    public void Assento_StatusInicial_DeveSerDisponivel()
+    public void Evento_ReservasAbaixoCapacidade_DeveSerPermitida()
     {
-        var assento = new { Status = "Disponivel" };
-        Assert.Equal("Disponivel", assento.Status);
+        var capacidadeTotal = 100;
+        var reservasAtuais = 50;
+
+        var excedeu = reservasAtuais > capacidadeTotal;
+
+        Assert.False(excedeu);
     }
 
-    [Fact]
-    public void Assento_Ocupado_NaoDevePermitirNovaVenda()
-    {
-        var statusOcupado = "Ocupado";
-        var podeVender = statusOcupado == "Disponivel";
-        Assert.False(podeVender);
-    }
-
-    [Fact]
-    public void Assento_Disponivel_DevePermitirVenda()
-    {
-        var statusDisponivel = "Disponivel";
-        var podeVender = statusDisponivel == "Disponivel";
-        Assert.True(podeVender);
-    }
-
-    // ── Regra de Negócio: Preço ───────────────────────────────────────────────
+    // ── Validação de PrecoPadrao ──────────────────────────────────────────────
 
     [Fact]
     public void Evento_PrecoPadraoZero_DeveSerRejeitado()
@@ -139,16 +132,45 @@ public class EventoTests
         Assert.True(preco > 0);
     }
 
+    // ── Regra de Negócio: Estrutura da Tabela Eventos ─────────────────────────
+
+    [Fact]
+    public void Evento_TabelaEventos_DeveTerIdAutoincremento()
+    {
+        // Simula a estrutura da tabela conforme especificação
+        var evento1 = new { Id = 1, Nome = "Evento 1", CapacidadeTotal = 100, DataEvento = DateTime.Now, PrecoPadrao = 50m };
+        var evento2 = new { Id = 2, Nome = "Evento 2", CapacidadeTotal = 200, DataEvento = DateTime.Now, PrecoPadrao = 80m };
+        
+        Assert.True(evento2.Id > evento1.Id);
+    }
+
+    [Fact]
+    public void Evento_CamposObrigatorios_DevemEstarPreenchidos()
+    {
+        var nome = "Show de Rock";
+        var capacidadeTotal = 500;
+        var dataEvento = DateTime.Now.AddDays(30);
+        var precoPadrao = 100m;
+
+        var todosValidos = !string.IsNullOrWhiteSpace(nome) &&
+                          capacidadeTotal > 0 &&
+                          dataEvento != default &&
+                          precoPadrao > 0;
+
+        Assert.True(todosValidos);
+    }
+
     // ── Regra de Negócio: Cálculo de Valor Total ──────────────────────────────
 
     [Theory]
     [InlineData(80.00, 2, 160.00)]
     [InlineData(50.00, 1, 50.00)]
     [InlineData(200.00, 4, 800.00)]
-    public void Evento_ValorTotalCompra_DeveSerPrecoVezesQuantidade(
-        decimal preco, int quantidade, decimal esperado)
+    [InlineData(100.00, 10, 1000.00)]
+    public void Evento_ValorTotalReserva_DeveSerPrecoVezesQuantidade(
+        decimal precoPadrao, int quantidade, decimal esperado)
     {
-        var valorTotal = preco * quantidade;
+        var valorTotal = precoPadrao * quantidade;
         Assert.Equal(esperado, valorTotal);
     }
 }

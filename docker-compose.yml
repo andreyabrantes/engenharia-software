@@ -1,0 +1,54 @@
+# ============================================================
+# Docker Compose — BoraAli (Frontend + Backend + SQLite)
+# Uso: docker compose up --build
+# ============================================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: boraali-api
+    ports:
+      - "5188:5188"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/BoraAli.db
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-change-me-in-production-use-64-char-minimum}
+      - JwtSettings__Issuer=BoraAli
+      - JwtSettings__Audience=BoraAliUsers
+      - EmailSettings__SmtpServer=${SMTP_SERVER:-}
+      - EmailSettings__Port=${SMTP_PORT:-587}
+      - EmailSettings__SenderEmail=${SMTP_EMAIL:-}
+      - EmailSettings__SenderName=BoraAli
+      - EmailSettings__Username=${SMTP_USERNAME:-}
+      - EmailSettings__Password=${SMTP_PASSWORD:-}
+      - CorsSettings__AllowedOrigins__0=http://localhost:3000
+    volumes:
+      - boraali-data:/app/data
+      - boraali-logs:/app/Logs
+      - boraali-uploads:/app/wwwroot/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5188/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: boraali-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5188
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  boraali-data:
+  boraali-logs:
+  boraali-uploads:

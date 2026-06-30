@@ -1,0 +1,42 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env*.local
+.env
+
+# Common ignores
+node_modules
+.next/
+.DS_Store
+
+# ===== .NET / C# =====
+# Build output
+backend/**/bin/
+backend/**/obj/
+
+# Logs
+backend/**/Logs/
+
+# SQLite database files (auto-created at runtime)
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
+
+# IDE files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User Secrets (development)
+backend/**/secrets.json
+
+# OS files
+Thumbs.db

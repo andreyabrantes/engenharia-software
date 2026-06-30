@@ -1,0 +1,156 @@
+================================================================================
+LIÇÕES APRENDIDAS - BoraAli
+================================================================================
+Data: Junho/2026
+Projeto: BoraAli - Plataforma de Eventos e Ingressos
+
+================================================================================
+1. ARQUITETURA E TECNOLOGIA
+================================================================================
+
+1.1. SQLite vs PostgreSQL
+--------------------------
+Decisão: Optamos por SQLite em vez de PostgreSQL para o MVP.
+Lição: SQLite é excelente para prototipagem e desenvolvimento local, mas para
+produção com múltiplos acessos concorrentes, seria necessário migrar para
+PostgreSQL ou SQL Server. A abstração via Dapper facilita essa migração.
+
+1.2. Dapper vs Entity Framework
+--------------------------------
+Decisão: Escolhemos Dapper (micro-ORM) em vez de Entity Framework Core.
+Lição: Dapper é significativamente mais rápido e dá controle total sobre as
+queries SQL. Porém, exige mais trabalho manual para escrever SQL e não possui
+migrations automáticas. Para um projeto com muitas entidades e relacionamentos
+complexos, EF Core poderia ser mais produtivo.
+
+1.3. Arquitetura em Camadas
+----------------------------
+Decisão: Adotamos Clean Architecture com 3 projetos (Core, Infrastructure, Api).
+Lição: A separação clara de responsabilidades facilitou a manutenção e os testes.
+No entanto, o número de arquivos e indireção pode ser excessivo para projetos
+pequenos. Para este porte, o custo-benefício foi positivo.
+
+1.4. Next.js App Router
+------------------------
+Decisão: Utilizamos Next.js 16 com App Router.
+Lição: O App Router é moderno e performático, mas ainda tem algumas arestas.
+A distinção entre Server Components e Client Components exige planejamento
+cuidadoso. Componentes que usam hooks (useState, useEffect) precisam ser
+marcados com 'use client', o que pode levar a uma proliferação de componentes
+client-side se não for bem planejado.
+
+================================================================================
+2. DESENVOLVIMENTO
+================================================================================
+
+2.1. shadcn/ui e Componentes
+-----------------------------
+Decisão: Utilizamos shadcn/ui como design system.
+Lição: A abordagem de copiar os componentes para o projeto (em vez de importar
+de um pacote) dá controle total sobre a customização. Porém, atualizações dos
+componentes originais precisam ser aplicadas manualmente. Recomenda-se manter
+um registro das versões dos componentes.
+
+2.2. Dados Mockados vs API Real
+--------------------------------
+Decisão: Mantivemos dados mockados como fallback durante o desenvolvimento.
+Lição: A transição de mock para API real foi suave, mas exigiu manter dois
+conjuntos de tipos (mock-data.ts e api-types.ts). Idealmente, deveríamos ter
+definido os tipos da API primeiro e feito o mock conformar a esses tipos.
+
+2.3. Autenticação no Frontend
+------------------------------
+Decisão: Token JWT armazenado no localStorage.
+Lição: localStorage é vulnerável a ataques XSS. Para produção, considerar
+cookies HttpOnly ou armazenamento em memória com refresh tokens. O uso de
+sessionStorage para dados temporários (selectedTickets) foi uma boa prática.
+
+2.4. Validação Dupla (Frontend + Backend)
+------------------------------------------
+Decisão: Validação no frontend (React Hook Form + Zod) e no backend
+(FluentValidation).
+Lição: A validação dupla é essencial para segurança e UX. O frontend valida
+para feedback imediato, o backend para segurança. FluentValidation se mostrou
+muito expressivo e fácil de integrar com ASP.NET Core.
+
+================================================================================
+3. GERENCIAMENTO DE PROJETO
+================================================================================
+
+3.1. Versionamento Semântico
+-----------------------------
+Decisão: Não adotamos versionamento semântico formal.
+Lição: Para projetos maiores, é essencial definir uma estratégia de
+versionamento desde o início (SemVer). Isso facilita o rastreamento de
+mudanças e a comunicação com a equipe.
+
+3.2. Documentação
+------------------
+Decisão: Documentação gerada após o desenvolvimento.
+Lição: Documentar durante o desenvolvimento (ou antes, como ADRs) é mais
+eficiente e preciso. A documentação retrospectiva corre o risco de perder
+detalhes importantes das decisões tomadas.
+
+3.3. Testes
+------------
+Decisão: Testes unitários apenas para os serviços (AuthServiceTests,
+EventServiceTests, OrderServiceTests).
+Lição: A cobertura de testes poderia ser maior, incluindo testes de
+integração para os repositórios e testes end-to-end para o fluxo completo
+de compra. A abstração via interfaces (IDapperExecutor) facilitou a
+criação de mocks para os testes existentes.
+
+================================================================================
+4. DECISÕES TÉCNICAS ESPECÍFICAS
+================================================================================
+
+4.1. Rate Limiting
+------------------
+Decisão: Implementamos rate limiting com 100 req/min global e 5 req/min para
+login.
+Lição: O rate limiting é essencial para proteção contra abusos. A política de
+5 tentativas por minuto para login é um bom equilíbrio entre segurança e
+usabilidade. Para produção, considerar políticas baseadas em usuário autenticado
+vs IP.
+
+4.2. Logging com Serilog
+-------------------------
+Decisão: Serilog com console + arquivo com rotação diária.
+Lição: Serilog é extremamente flexível e a configuração declarativa no
+appsettings.json facilita a manutenção. A rotação diária de arquivos evita
+acúmulo de logs. Para produção, considerar adicionar um sink cloud (Seq,
+Application Insights, DataDog).
+
+4.3. CORS Configurado
+----------------------
+Decisão: CORS restrito a origens configuradas.
+Lição: A configuração explícita de origens permitidas é uma boa prática de
+segurança. Para desenvolvimento, incluímos localhost:3000 (frontend) e
+localhost:5188 (backend). Em produção, deve-se configurar apenas o domínio
+do frontend.
+
+4.4. Inicialização Automática do Banco
+---------------------------------------
+Decisão: O banco de dados é inicializado automaticamente na primeira execução.
+Lição: A abordagem de verificar se as tabelas existem e criar/seed
+automaticamente é muito conveniente para desenvolvimento. Para produção,
+recomenda-se usar migrations controladas.
+
+================================================================================
+5. RECOMENDAÇÕES FUTURAS
+================================================================================
+
+5.1. Migrar para PostgreSQL em produção para melhor concorrência.
+5.2. Implementar refresh tokens para autenticação mais segura.
+5.3. Adicionar testes de integração para o fluxo completo de compra.
+5.4. Implementar CI/CD com GitHub Actions.
+5.5. Adicionar monitoramento e alertas (Application Insights ou similar).
+5.6. Containerizar a aplicação com Docker para facilitar deploy.
+5.7. Implementar cache (Redis ou MemoryCache) para consultas frequentes.
+5.8. Adicionar health checks mais robustos.
+5.9. Implementar versionamento de API (v1, v2).
+5.10. Criar documentação de API interativa com exemplos de uso.
+
+================================================================================
+FIM DO DOCUMENTO DE LIÇÕES APRENDIDAS
+================================================================================

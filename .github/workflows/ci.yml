@@ -1,0 +1,91 @@
+# ============================================================
+# GitHub Actions — CI Pipeline (Build + Test + Security)
+# Executa em todo push e pull request nas branches principais
+# ============================================================
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ============================================================
+  # Job 1: Backend .NET 8 — Build + Test + Security Scan
+  # ============================================================
+  backend:
+    name: Backend (.NET 8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/BoraAli.Api/BoraAli.Api.csproj
+
+      - name: Build
+        run: dotnet build backend/BoraAli.Api/BoraAli.Api.csproj --no-restore -c Release
+
+      - name: Run unit tests
+        run: dotnet test backend/BoraAli.Tests/BoraAli.Tests.csproj -c Release --no-build --verbosity normal
+
+      - name: Scan vulnerable NuGet packages
+        run: dotnet list backend/BoraAli.Api/BoraAli.Api.csproj package --vulnerable 2>&1 | tee nuget-vuln.txt
+        continue-on-error: true
+
+  # ============================================================
+  # Job 2: Frontend Next.js — Build + Lint
+  # ============================================================
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm build
+
+  # ============================================================
+  # Job 3: Security — Hardcoded secrets scan
+  # ============================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for hardcoded credentials
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          PATTERNS='(Password|SecretKey|ApiKey|ConnectionString)\s*=\s*"[^"]{20,}"'
+          if grep -rnE "$PATTERNS" --include="*.cs" --include="*.json" backend/ app/ 2>/dev/null; then
+            echo "::warning::Possiveis credenciais hardcoded encontradas. Verifique os arquivos acima."
+          else
+            echo "Nenhuma credencial hardcoded detectada."
+          fi

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="BoraAli.Api/BoraAli.Api.csproj" />
+  <Project Path="BoraAli.Core/BoraAli.Core.csproj" />
+  <Project Path="BoraAli.Infrastructure/BoraAli.Infrastructure.csproj" />
+  <Project Path="BoraAli.Tests/BoraAli.Tests.csproj" />
+</Solution>
